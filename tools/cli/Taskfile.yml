@@ -1,0 +1,21 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: echo hi task
+      
+  setup.base: |
+    brew install htop tree
+
+    # use brew git instead of macos-builtin
+    brew install git jq
+
+    # GNU Core Utils, GnuPG
+    brew install coreutils gnu-sed gpg
+
+    # rg (ripgrep) 是无可争议的王者
+    brew install ripgrep fzf zoxide
+
+    # note about ripgrep in omz
+    # ripgrep: completion is already included when installed via package managers.
+    # https://github.com/ohmyzsh/ohmyzsh/wiki/plugins

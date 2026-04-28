@@ -1,0 +1,17 @@
+# https://taskfile.dev/docs/guide
+version: "3"
+env:
+  env1: env1 value
+vars:
+  var1: task var1
+tasks:
+  env1: |
+    # overwrite by env1=abc task env1
+    echo "env1=$env1"
+  var1: |
+    # not overwrite by var1=abc task var1
+    echo "var1={{.var1}}"
+
+  ## setup
+  setup: |
+    brew install go-task

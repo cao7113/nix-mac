@@ -1,0 +1,25 @@
+# git config --global core.excludesfile
+
+tmp/*
+tmp-*
+keys
+_local*
+local/
+local-*
+*.local
+
+.idea
+*.sw[a-z]
+*~
+
+.DS_Store
+
+# nodejs
+dist
+node_modules
+
+nohup.out
+
+# Taskfile
+.task
+.direnv

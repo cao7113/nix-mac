@@ -1,0 +1,21 @@
+{
+  "passwordHistory": [],
+  "revisionDate": "2026-02-17T01:51:11.597Z",
+  "creationDate": "2026-02-17T01:51:11.597Z",
+  "object": "item",
+  "id": "000af5a9-1bae-49b3-a111-b3f4001e8a48",
+  "folderId": "1a192437-4aed-406e-a5a0-b3d800edde2d",
+  "type": 5,
+  "reprompt": 0,
+  "name": "ssh demo",
+  "notes": null,
+  "favorite": false,
+  "fields": [],
+  "sshKey": {
+    "privateKey": "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaAAAAMwAAAAtzc2gtZW\nQyNTUxOQAAACCtInXjIbssQ6BdfhLyGASB6OKuC1ulc/byUBZLwySskwAAAJDWDjXA1g41\nwAAAAAtzc2gB6OKuC1ulc/byUBZLwySskw\n-----END OPENSSH PRIVATE KEY-----",
+    "publicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTExDoF1+EvIYBIHo4q4LW6Vz9vJQFkvDJKyT ssh demo",
+    "keyFingerprint": "SHA256:LlHj/Je6Oi339OFfrV+utcUzstYGnH1j0SWQP+Zc92Q"
+  },
+  "collectionIds": [],
+  "attachments": []
+}

@@ -1,0 +1,71 @@
+# https://taskfile.dev
+version: "3"
+vars:
+  # ubuntu box
+  ubox_name: ubox1
+  # alpine box
+  abox_name: abox1
+tasks:
+  local: open http://orb.local
+
+  ## Containers
+
+  hi: open http://localhost
+  hi.run: docker run -p 80:80 docker/getting-started
+  # orb config docker
+  # orb logs docker
+
+  ## Machines
+
+  m: |
+    # get default machine
+    orb default
+    # set default machine
+    # orb default ubox1
+
+  ## ubuntu
+  ubox.ops: |
+    ansible-playbook -i inventory.yml playbook.yml --become
+    # ansible -i inventory.yml box1 -m apt -a "pkg=snapd state=present" --become
+    # ansible -i inventory.yml ubox1 -m community.general.snap -a "name=task state=present classic=true" --become -vvv
+
+  ubox.up: | 
+    # noble 202404
+    orb create ubuntu:noble --arch amd64 {{.ubox_name}}
+    # resolute 202604
+    # jammy 202204
+    # orb create ubuntu:jammy --arch amd64 {{.ubox_name}}
+
+  ubox.del: orb delete -f {{.ubox_name}}
+  ubox.reset: |
+    task ubox.del || true
+    task ubox.up
+    task ubox.ops
+
+  abox: |
+    orb create alpine:3.19 --arch amd64 {{.abox_name}}
+
+  ## Setup
+  conf: orb config show
+  
+  doc: |
+    mkdir -p doc
+    cd doc
+    orb ssh > orb-ssh.txt
+    orb --help > orb.txt
+    orbctl --help > orbctl.txt
+    orbctl run --help > orbctl-run.txt
+    orbctl create --help > orbctl-create.txt
+
+    cd ..
+    mkdir -p _local
+    ln -snf ~/.ssh _local/_ssh
+    ln -snf ~/.orbstack/ssh _local/orb-ssh
+
+  v: |
+    $(brew --prefix)/bin/orb version
+    # brew info --cask orbstack
+  setup: |
+    brew install orbstack
+  up: |
+    brew upgrade orbstack

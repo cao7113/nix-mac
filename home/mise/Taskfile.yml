@@ -1,0 +1,45 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: echo hi mise
+
+  ex: mise x elixir@1.19.4-otp-28 -- elixir --version
+  erl: mise x erlang@28.3 -- erl -version
+  ls: mise list
+  core: mise registry -b core
+  
+  info: |
+    mise docter 
+    # cat ~/.config/mise/config.toml 
+    # echo $MISE_DATA_DIR
+    # ~/.local/share/mise
+
+  doc: |
+    mkdir -p doc
+    mise help > doc/mise.md
+
+  ## Setup
+  v: mise --version
+  setup: brew install mise
+
+  # https://mise.jdx.dev/installing-mise.html
+  setup.script: |
+    curl https://mise.run/zsh > install.sh
+    # curl https://mise.run/zsh | sh
+    # Installs mise and adds activation to ~/.zshrc
+
+    # MISE_DEBUG=1 – enable debug logging
+    # MISE_QUIET=1 – disable non-error output
+    # MISE_INSTALL_PATH=/some/path – change the binary path (default: ~/.local/bin/mise)
+    # MISE_VERSION=v2025.12.0 – install a specific version
+
+    # gpg --keyserver hkps://keys.openpgp.org --recv-keys 24853EC9F655CE80B48E6C3A8B81C9D17413A06D
+    # curl https://mise.jdx.dev/install.sh.sig | gpg --decrypt > install.sh
+    # # ensure the above is signed with the mise release key
+    # sh ./install.sh
+  
+  setup.rs: cargo install mise
+
+  # uninstall
+  # https://mise.jdx.dev/installing-mise.html#uninstalling

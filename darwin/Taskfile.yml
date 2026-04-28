@@ -1,0 +1,87 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+vars:
+  USER_AGENTS_HOME: ~/Library/LaunchAgents/
+  SYS_AGENTS_HOME: /Library/LaunchAgents/
+tasks:
+  default: echo hi MacOS!
+
+  # which log # todo learn
+  # log show --predicate 'process == "keychaindp" OR process == "securityd"' --last 5m
+  # log help show
+  # 实时查看 keychaindp 的同步日志（26.3 专用谓词）
+  # log stream --predicate 'process == "keychaindp"' --level info
+
+  setup.xcode: |
+    xcode-select --install
+
+  doc: |
+    mkdir -p doc
+    cd doc
+    man arch | col -b > arch-man.txt
+    man log | col -b > log-man.txt
+    # launchctl help > launchctl-help.txt
+
+  # osascript -e "display notification \"$msg\" with title \"🔑 Keychain 访问失败\" subtitle \"Security Toolset\" sound name \"Basso\""
+
+  # m-cli
+  # brew install m-cli
+
+  # user id
+  # - **staff**：普通用户组，绝大多数用户都属于它。
+  # - **wheel**：超级用户组，只有 root 和部分管理员属于它，权限更高。
+
+  ## launchctl
+  # macOS 中用于与 `launchd`（启动守护进程）交互的命令行工具。
+  # 用来加载、卸载、启动、停止和管理 Launch Agents 和 Launch Daemons
+
+  # launchctl version
+
+  # 服务名通常是 plist 文件中的 `Label` 字段
+  # 注意事项
+  # - 用户级别的 Launch Agent 建议用普通用户权限操作。
+  # - 系统级别的 Launch Daemon 需要 `sudo` 权限
+  ls: launchctl list
+
+  agents.running: |
+    # 说明
+    # - `launchctl list` 输出的每一行通常是：
+    #   ```
+    #   PID     Status  Label
+    #   ```
+    # - PID 为“-”表示当前没有进程在运行，Status 为退出码或 0。
+    # 如果服务正在运行，`PID` 字段会显示进程号，`Status` 通常为 0
+    # 如果服务没有运行，`PID` 字段为 `-`，`Status` 显示的是**上一次退出时的状态码**
+    # 比如只看正在运行（PID 不为“-”）的服务：
+    launchctl list | awk '$1 != "-"'
+
+  # Launch Agent 的配置信息都存储在一个 `.plist` 文件中。常见位置有：
+  # - `~/Library/LaunchAgents/`（当前用户）
+  # - `/Library/LaunchAgents/`（所有用户
+  # plutil -p ~/Library/LaunchAgents/com.example.myagent.plist
+  agents: |
+    echo {{.USER_AGENTS_HOME}}
+    ls -Al {{.USER_AGENTS_HOME}}
+    echo {{.SYS_AGENTS_HOME}}
+    ls -Al {{.SYS_AGENTS_HOME}}
+
+  # 用 `launchctl` 查看已加载的配置（部分信息）
+  # 你可以用：
+  #   launchctl print gui/$(id -u)/com.example.myagent
+  # 或者（系统级 Daemon 用 system 代替 gui）：
+  #   launchctl print system/com.example.myagent
+  # 这会显示该服务的运行状态和部分配置信息，但**不会显示完整的 plist 文件内容
+
+  ## DNS on Mac
+  # mDNS
+  # *.local 访问
+  # *.lh
+
+  ## host ops
+  # hostname # xxx.local
+  # sudo scutil --set HostName rjmac.local
+  # hostinfo
+
+  ## DNS
+  # host qq.com
