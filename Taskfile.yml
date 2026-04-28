@@ -1,0 +1,21 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: echo hi nix-config
+
+  fmt: |
+    nix fmt
+    # nix fmt ./modules/darwin/default.nix
+
+  # nix eval .\#darwinConfigurations.mac.config.home-manager.users.rj.home.homeDirectory --raw
+  # nix repl
+  # nix-repl> :lf .
+  # nix-repl> outputs.darwinConfigurations.mac.config.home-manager.users.rj.home.homeDirectory
+
+  ## golab
+  # nix-shell -p go
+
+  sops.repo: |
+    git clone --depth 1 git@github.com:Mic92/sops-nix.git _local/sops-nix
+    # nix eval .\#darwinConfigurations.mac.config.home-manager.users.rj.sops.defaultSopsFile --raw
