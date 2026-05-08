@@ -1,0 +1,16 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: |
+    echo "# privateKey with \\n"
+    # -r 参数: jq -r (raw-output) 会去掉字符串两边的双引号，这对于将值存入 shell 变量至关重要。
+    # -c 参数: 对于 sshKey 这种对象，使用 -c (compact) 可以将其压缩成单行字符串，方便 shell 处理。
+    cat demo.json | jq -c ".sshKey" | jq ".privateKey"
+    cat demo.json | jq -c ".sshKey" | jq -r ".privateKey"
+    cat demo.json | jq -r '.sshKey.privateKey'
+
+    # echo "# hello sshKey"
+    # read -r name id sshKey <<-'EOF'
+    # $(jq -r ".name, .id, (.sshKey | @json)" demo.json)
+    # EOF

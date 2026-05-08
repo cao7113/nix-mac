@@ -1,0 +1,20 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+vars:
+  brew_pkg_name: openssl
+tasks:
+  rand: openssl rand -base64 40
+  # openssl rand -hex 32
+
+  doc: |
+    mkdir -p doc
+    cd doc
+    openssl --help &> openssl.txt
+    man openssl | col -b > openssl-man.txt
+    
+  h: openssl --help
+  v: openssl --version
+  setup: brew install {{.brew_pkg_name}}
+  b.up: brew upgrade {{.brew_pkg_name}}
+  b.info: brew info {{.brew_pkg_name}}

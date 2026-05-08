@@ -1,0 +1,17 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: echo hi task
+  
+  install-httpie:
+    desc: install httpie https://httpie.org/docs
+    status:
+      - which http > /dev/null
+    cmds:
+      - brew install httpie
+
+  install-hostctl:
+    desc: https://guumaster.github.io/hostctl/docs/installation/#homebrew
+    cmds:
+      - brew install guumaster/tap/hostctl

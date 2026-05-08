@@ -1,0 +1,28 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: echo hi task
+
+  config: mise config ls
+
+  # not works?
+  greet: mise run greet --user jdx -g "hey" "How are you?"
+  greet.h: mise run greet --help
+
+  # list mise related envs
+  env: |
+    # mise set
+    mise env --dotenv # --json
+  # mise unset NODE_ENV
+
+  # mise use -g erlang@26
+  # mise ls-remote erlang. 
+  # mise config get tools 
+  # mise tool erlang
+
+  setup: |
+    # get a mise.toml
+    # mise edit # elixir@1.19.5-otp-28
+    mise use erlang@28.3
+    mise set test_env=123

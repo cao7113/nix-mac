@@ -1,0 +1,15 @@
+SSH command:
+    ssh orb
+For more advanced usage:
+    Connect to a specific machine: ssh MACHINE@orb
+    Log in as a specific user: ssh USER@MACHINE@orb
+
+Most apps (including Visual Studio Code and JetBrains Fleet) will work with the simple commands above. You can find "orb" in the VS Code's Remote Explorer sidebar.
+
+Applications that don't use OpenSSH (e.g. IntelliJ IDEA) will need the following settings:
+    Host: localhost
+    Port: 32222
+    User: default
+    Private key: ~/.orbstack/ssh/id_ed25519
+For example:
+    ssh -p 32222 -i ~/.orbstack/ssh/id_ed25519 default@localhost

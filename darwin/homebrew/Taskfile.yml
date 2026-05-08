@@ -1,0 +1,20 @@
+# https://taskfile.dev/usage/
+version: "3"
+tasks:
+  default: |
+    brew --version
+    brew home
+
+  doc: |
+    mkdir -p doc
+    cd doc
+    man brew | col -b > man.txt
+    brew --help > help.txt
+
+  ## Tap management
+  # list all installed taps
+  taps: brew tap
+  # brew untap <user/repo>
+  gh-taps: open https://github.com/topics/homebrew-tap
+  # brew services tap
+  # https://github.com/Homebrew/homebrew-services

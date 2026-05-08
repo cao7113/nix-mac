@@ -1,0 +1,21 @@
+# https://taskfile.dev
+version: "3"
+vars:
+  IMG_NAME: flyio-try
+
+includes:
+  fly-io:
+    taskfile: ./Taskfile-flyio.yml
+    aliases: [f, fly]
+    optional: true
+
+tasks:
+  hi: echo hi flyio
+
+  ## Docker
+  dk.build: docker build -t {{.IMG_NAME}} .
+  dk.sh: docker run --rm -it {{.IMG_NAME}} sh
+  dk.run:
+    deps: [dk-build]
+    cmds:
+      - docker run --name {{.IMG_NAME}} --rm -it -e PORT=7777 -p 8080:7777 {{.IMG_NAME}}

@@ -1,0 +1,29 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+vars:
+  brew_pkg_name: direnv
+tasks:
+  default: echo hi task
+
+  doc: |
+    mkdir -p doc
+    direnv --help &> doc/direnv.txt
+    man direnv | col -b &> doc/direnv-man.txt
+
+  repo.clone: |
+    repo_url="git@github.com:direnv/direnv.git"
+    repo_dir=_local/direnv
+    mkdir -p $(dirname $repo_dir)
+    [ -d $repo_dir ] || {
+      git clone --depth=5 $repo_url $repo_dir
+    }
+
+  ## Setup
+  h: direnv --help
+  v: direnv --version
+  setup: |
+    # https://direnv.net/docs/installation.html
+    brew install {{.brew_pkg_name}}
+  up: brew upgrade {{.brew_pkg_name}}
+  info: brew info {{.brew_pkg_name}}
