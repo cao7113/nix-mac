@@ -84,7 +84,6 @@ in
   # ==========================================================================
 
   home-manager.users.${username} = {
-
     home.activation = {
       setupPostgresUser = inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         export PATH="${pgPkg}/bin:$PATH"

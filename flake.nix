@@ -116,8 +116,7 @@
           ## file modules
           darwin/_main.nix
           home/_main.nix
-          tools/db/pg/default.nix
-          tools/cloud/flyio/default.nix
+          tools/_main.nix
         ];
       };
 

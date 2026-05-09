@@ -64,10 +64,7 @@
       ./git.nix
       ./pkgs.nix
       ./dotfiles.nix
-      # ./fortune-word.nix
       ./vim.nix
-      ./mise/default.nix
-      # dev/golang.nix
       ./_sec.nix
     ];
   };

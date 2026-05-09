@@ -57,7 +57,7 @@
   # };
 
   environment.shellAliases = {
-    machi = "echo hello from nix-darwin config file shell alias";
+    himac = "echo hello from nix-darwin config file shell aliases";
   };
 
   system.defaults = {
