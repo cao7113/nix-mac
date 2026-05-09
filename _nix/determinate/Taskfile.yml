@@ -1,0 +1,177 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: |
+    echo hi https://determinate.systems
+
+  hi: |
+    echo TASKFILE_DIR={{.TASKFILE_DIR}}
+    # scutil --get LocalHostName
+
+  ## templates
+  # nix run "https://flakehub.com/f/DeterminateSystems/fh/0" -- init
+  # fh init
+  # nix flake init --template "https://flakehub.com/f/DeterminateSystems/flake-templates/0#nix-darwin"
+  tmp.darwin: |
+    # https://flakehub.com/flake/DeterminateSystems/flake-templates?view=usage
+    nix flake new --template "https://flakehub.com/f/DeterminateSystems/flake-templates/0#nix-darwin" tmp-darwin
+
+    # fh apply nix-darwin "my-org/macos-configs/0.1#darwinConfigurations.justme-aarch64-darwin"
+    # fh apply nix-darwin ".\#darwinConfigurations.mac"
+
+  templ: |
+    # DeterminateSystems templates
+    # https://github.com/DeterminateSystems/flake-templates
+    nix flake show github:DeterminateSystems/flake-templates
+    nix flake show "https://flakehub.com/f/DeterminateSystems/flake-templates/*"
+    # has default template with ds installer
+  repo.clone.tmpl: |
+    cd _local
+    git clone --depth 2 https://github.com/DeterminateSystems/flake-templates.git
+
+  ## scheme
+  repo.clone.schema: |
+    cd _local
+    git clone --depth 2 https://github.com/DeterminateSystems/flake-schemas.git
+  
+  ## flake hub
+  fh: |
+    # flakehub helper cli
+    # https://flakehub.com/flake/DeterminateSystems/fh?view=readme
+    # get fh cli
+    nix shell "https://flakehub.com/f/DeterminateSystems/fh/*.tar.gz"
+
+  demo.fh: |
+    [ -d demo-fh ] || {
+      mkdir -p demo-fh 
+      cd demo-fh
+      fh init
+      # Let's build a Nix flake!
+      # > An optional description for your flake: fh demo test
+      # > Which systems would you like to support? You selected 1 system: aarch64-darwin
+      # > Which Nixpkgs version would you like to include? unstable
+      # > Add any of these standard utilities to your environment if you wish jq
+      # > Would you like to add our recommended Nix formatter (nixpkgs-fmt) to your environment? Yes
+      # > Would you like to add doc comments to your flake that explain the meaning of different aspects of the flake? Yes
+      # > Would you like to add any environment variables? Yes
+      # > Variable name: testfh
+      # > Variable value: testonly
+      # > Enter another variable? No
+      # > Would you like to add a shell hook that runs every time you enter your Nix development environment? Yes
+      # > Enter the hook here: echo "hi fh as flakehub cli"
+      # > Would you like to add a .envrc file so that you can use direnv in this project? Yes
+      # > You'll need to run `direnv allow` to activate direnv in this project. Would you like to do that now? Yes
+      # Your flake is ready to go! Run `nix flake show` to see which outputs it provides.
+    }
+
+  repo.clone.fh: |
+    # https://github.com/DeterminateSystems/fh
+    mkdir -p _local 
+    cd _local
+    git clone --depth 2 https://github.com/DeterminateSystems/fh.git
+
+  st: |
+    determinate-nixd status
+
+  login: |
+    determinate-nixd login
+    # determinate-nixd auth logout
+
+
+  ## Nix environment setup
+
+  version: determinate-nixd version
+
+  planer.help: |
+    # Determinate Nix Installer installs Nix by following a plan made by a planner. To review the available planners:
+    /nix/nix-installer install --help
+    # /nix/nix-installer install linux --help
+
+  self.test: |
+    /nix/nix-installer self-test -vv
+
+  upgrade: |
+    sudo determinate-nixd upgrade
+
+  setup: |
+    # https://zero-to-nix.com/start/install/
+    # https://determinate.systems/nix-installer/
+    # https://github.com/DeterminateSystems/nix-installer/releases
+
+    export NIX_INSTALLER_DIAGNOSTIC_ENDPOINT=""
+
+    # curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install # --no-confirm
+
+    mkdir -p _local && cd _local
+    install_script=nix-installer.sh
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix > $install_script
+    chmod +x $install_script
+
+    echo "Please use GUI installer package as official guide!"
+    # ./$install_script install
+
+  setup.by.gui: |
+    ## macOS package https://docs.determinate.systems/determinate-nix/#getting-started
+    # The best way to get started with Determinate Nix on macOS is to use our macOS package, 
+    # which uses Determinate Nix Installer behind the scenes but provides a highly intuitive graphical UI.
+
+    # ❄️🚀
+    # The installation was successful.
+
+    # Start your Nix learning journey with Zero to Nix.
+
+    # What’s next?
+
+    # Collaborate with your team and share Nix flakes with FlakeHub.
+    # Stay secure with the Nix Flake Checker.
+    # Keep up to date with the Update Flake Lock.
+    # Speed up CI with the Magic Nix Cache.
+
+    # Join us on Discord: https://determinate.systems/discord and let us know how we did!
+  
+  uninstall: |
+    sudo /nix/nix-installer uninstall
+
+    # uninstall darwin as below
+    # `nix-darwin` installation detected, it must be removed before uninstalling Nix. 
+    # Please refer to https://github.com/LnL7/nix-darwin#uninstalling for instructions how to uninstall `nix-darwin`.
+
+    # ... clear all /nix/ and restore raw config
+  
+  ## nix-darwin win determinate
+  # https://flakehub.com/f/DeterminateSystems/determinate
+  # https://github.com/DeterminateSystems/determinate
+
+  uninstall.nix-darwin: |
+    # https://github.com/nix-darwin/nix-darwin#uninstalling
+
+    # To run the latest version of the uninstaller, you can run the following command:
+    # sudo nix --extra-experimental-features "nix-command flakes" run nix-darwin#darwin-uninstaller
+    # sudo nix run nix-darwin\#darwin-uninstaller
+
+    # If that command doesn't work for you, you can try the locally installed uninstaller:
+    sudo darwin-uninstaller
+
+    # Uninstalling nix-darwin, this will:
+    # - remove /Applications/Nix Apps symlink
+    # - cleanup static /etc files
+    # - disable and remove all launchd services managed by nix-darwin
+    # ...
+    # NOTE: The /nix/var/nix/profiles/system* profiles still exist and won't be garbage collected.
+    # Done!
+
+  repo.clone.installer: |
+    cd {{.TASKFILE_DIR}}
+
+    mkdir -p _local
+    cd _local
+    # rust repo
+    [ -d nix-installer ] && echo "found!" || {
+      git clone --depth 2 git@github.com:DeterminateSystems/nix-installer.git
+      echo "cloned repo"
+    }
+  
+  repo.clone.ds: |
+    cd _local
+    git clone --depth 2 https://github.com/DeterminateSystems/determinate.git

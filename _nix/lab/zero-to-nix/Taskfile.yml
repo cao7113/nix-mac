@@ -1,0 +1,60 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  # flake
+  flake.init: |
+    nix run "https://flakehub.com/f/DeterminateSystems/fh/*" -- init
+    nix flake show
+
+  search: |
+    nix search "https://flakehub.com/f/NixOS/nixpkgs/*" cargo
+    # nix search --json nixpkgs cargo
+
+  ## build
+  b: |
+    mkdir build-nix-package && cd build-nix-package
+    nix build "https://flakehub.com/f/NixOS/nixpkgs/*#bat"
+    ls 
+    result/bin/bat --help
+  b.rg: |
+    nix build "nixpkgs#ripgrep"
+    ./result/bin/rg --help
+  b.hm: |
+    mkdir home-manager && cd home-manager
+    nix build "https://flakehub.com/f/nix-community/home-manager/*"
+    ./result/bin/home-manager --help
+
+  b.local: |
+    mkdir nix-rust-pkg && cd nix-rust-pkg
+    nix flake init --template "github:DeterminateSystems/zero-to-nix#rust-pkg"
+    nix build
+  
+  ## run dev-env
+  dev.flake: |
+    mkdir nix-rust-dev 
+    cd nix-rust-dev && nix flake init --template "github:DeterminateSystems/zero-to-nix#rust-dev"
+  dev.local: nix develop ./nix-rust-dev
+  
+  dev.rust: |
+    nix develop "github:DeterminateSystems/zero-to-nix#rust"
+    # type cargo 
+    # cargo init ./zero-to-nix-rs
+    # cd ./zero-to-nix-rs
+    # cargo run
+
+  dev: |
+    # Enter a Nix development environment defined in an external flake 
+    nix develop "https://flakehub.com/f/DeterminateSystems/zero-to-nix/*#example"
+    # Shell prompt in the Nix development environment
+    # (nix:zero-to-nix-env) bash-5.2$
+    # type curl
+    # type git
+
+    # echo $FUNNY_JOKE
+    # input exit to exit
+    # nix develop "github:DeterminateSystems/zero-to-nix#hook"
+
+  dev.cmd: |
+    nix develop "https://flakehub.com/f/DeterminateSystems/zero-to-nix/*#example" --command git help
+    nix develop "https://flakehub.com/f/DeterminateSystems/zero-to-nix/*#example" --command curl https://example.com

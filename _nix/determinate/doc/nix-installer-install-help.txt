@@ -1,0 +1,138 @@
+Install Nix using a planner
+
+By default, an appropriate planner is heuristically determined based on the system.
+
+Some planners have additional options which can be set from the planner's subcommand.
+
+Usage: nix-installer install [OPTIONS] [PLAN]
+       nix-installer install <COMMAND>
+
+Commands:
+  macos  A planner for MacOS (Darwin) systems
+  help   Print this message or the help of the given subcommand(s)
+
+Arguments:
+  [PLAN]
+          A path to a non-default installer plan
+          
+          [env: NIX_INSTALLER_PLAN=]
+
+Options:
+      --no-confirm
+          Run installation without requiring explicit user confirmation
+          
+          [env: NIX_INSTALLER_NO_CONFIRM=]
+
+      --proxy <PROXY>
+          The proxy to use (if any); valid proxy bases are `https://$URL`, `http://$URL` and `socks5://$URL`
+          
+          [env: NIX_INSTALLER_PROXY=]
+
+      --determinate
+          Enable Determinate Nix. See: <https://determinate.systems/enterprise>
+          
+          [env: NIX_INSTALLER_DETERMINATE=]
+
+      --ssl-cert-file <SSL_CERT_FILE>
+          An SSL cert to use (if any); used for fetching Nix and sets `ssl-cert-file` in `/etc/nix/nix.conf`
+          
+          [env: NIX_INSTALLER_SSL_CERT_FILE=]
+
+      --diagnostic-attribution <DIAGNOSTIC_ATTRIBUTION>
+          Relate the install diagnostic to a specific value
+          
+          [env: NIX_INSTALLER_DIAGNOSTIC_ATTRIBUTION=]
+
+      --prefer-upstream-nix
+          Prefer installing upstream Nix if possible when run in an automated context
+          
+          [env: NIX_INSTALLER_PREFER_UPSTREAM_NIX=]
+
+      --diagnostic-endpoint [<DIAGNOSTIC_ENDPOINT>]
+          The URL or file path for an anonymous installation diagnostic to be sent
+          
+          To disable diagnostic reporting, unset the default with `--diagnostic-endpoint ""`, or `NIX_INSTALLER_DIAGNOSTIC_ENDPOINT=""`
+          
+          [env: NIX_INSTALLER_DIAGNOSTIC_ENDPOINT=]
+
+      --no-modify-profile
+          Modify the user profile to automatically load Nix
+          
+          [env: NIX_INSTALLER_MODIFY_PROFILE=]
+
+      --nix-build-group-name <NIX_BUILD_GROUP_NAME>
+          The Nix build group name
+          
+          [env: NIX_INSTALLER_NIX_BUILD_GROUP_NAME=]
+          [default: nixbld]
+
+  -v, --verbose...
+          Enable debug logs, -vv for trace
+          
+          [env: NIX_INSTALLER_VERBOSITY=]
+
+      --logger <LOGGER>
+          Which logger to use (options are `compact`, `full`, `pretty`, and `json`)
+          
+          [env: NIX_INSTALLER_LOGGER=]
+          [default: compact]
+          [possible values: compact, full, pretty, json]
+
+      --nix-build-group-id <NIX_BUILD_GROUP_ID>
+          The Nix build group GID
+          
+          [env: NIX_INSTALLER_NIX_BUILD_GROUP_ID=]
+          [default: 350]
+
+      --log-directive [<LOG_DIRECTIVES>...]
+          Tracing directives delimited by comma
+          
+          See https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#directives
+          
+          [env: NIX_INSTALLER_LOG_DIRECTIVES=]
+
+      --nix-build-user-prefix <NIX_BUILD_USER_PREFIX>
+          The Nix build user prefix (user numbers will be postfixed)
+          
+          [env: NIX_INSTALLER_NIX_BUILD_USER_PREFIX=]
+          [default: _nixbld]
+
+      --nix-build-user-count <NIX_BUILD_USER_COUNT>
+          The number of build users to create
+          
+          [env: NIX_INSTALLER_NIX_BUILD_USER_COUNT=]
+          [default: 32]
+
+      --nix-build-user-id-base <NIX_BUILD_USER_ID_BASE>
+          The Nix build user base UID (ascending) Service users on Mac should be between 200-400
+          
+          [env: NIX_INSTALLER_NIX_BUILD_USER_ID_BASE=]
+          [default: 350]
+
+      --nix-package-url <NIX_PACKAGE_URL>
+          The Nix package URL
+          
+          [env: NIX_INSTALLER_NIX_PACKAGE_URL=]
+
+      --extra-conf [<EXTRA_CONF>...]
+          Extra configuration lines for `/etc/nix.conf`
+          
+          [env: NIX_INSTALLER_EXTRA_CONF=]
+
+      --force
+          If `nix-installer` should forcibly recreate files it finds existing
+          
+          [env: NIX_INSTALLER_FORCE=]
+
+      --skip-nix-conf
+          If `nix-installer` should skip creating `/etc/nix/nix.conf`
+          
+          [env: NIX_INSTALLER_SKIP_NIX_CONF=]
+
+      --explain
+          Provide an explanation of the changes the installation process will make to your system
+          
+          [env: NIX_INSTALLER_EXPLAIN=]
+
+  -h, --help
+          Print help (see a summary with '-h')

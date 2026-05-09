@@ -98,3 +98,5 @@ function nix-mac-home-manager(){
       ;;
   esac
 }
+
+source $mac_rc_dir/_nix/main.zsh

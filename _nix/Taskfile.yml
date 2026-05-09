@@ -1,0 +1,210 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+includes:
+  determinate:
+    taskfile: determinate/Taskfile.yml
+    aliases: [d, ds]
+    optional: true
+tasks:
+  default: |
+    echo hi nix-darwin and home-manager
+    # try nix run
+    echo "Hello Nix" | nix run "https://flakehub.com/f/NixOS/nixpkgs/*#ponysay"
+    # nix shell nixpkgs#hello -c htop
+    # echo $NIX_PATH
+  
+  # nix-instantiate '<nixpkgs>' -A hello
+  # nix run "nixpkgs#hello"
+  # nix eval --impure --raw --expr 'builtins.currentSystem'
+
+  new.mac: |
+    nix flake new --template "https://flakehub.com/f/DeterminateSystems/flake-templates/*#nix-darwin" mac
+
+  use: |
+    sudo darwin-rebuild switch --flake .\#mac
+    # sudo nix run nix-darwin/nix-darwin-25.11\#darwin-rebuild -- switch --flake .\#mac
+
+  b: |
+    darwin-rebuild build --flake .#mac
+  repl: |
+    nix repl
+  rp: nix repl
+  
+  host.names: |
+    # “电脑名称 (ComputerName)”为了给人（隔空投送、访客）看的。
+    # “主机名 (HostName)”是为了给网络设备（路由器、服务器）看的，
+    scutil --get ComputerName
+    scutil --get HostName
+    scutil --get LocalHostName
+    # sudo scutil --set ComputerName "mac" && sudo scutil --set HostName "mac" && sudo scutil --set LocalHostName "mac"
+
+  # direnv status
+  # direnv reload
+
+  fmt: |
+    rg --files -g "*.nix" -0 | xargs -0 nixfmt
+    # --files: 只列出文件名，不搜索文件内容。
+    # -g "*.nix": 这是一个 glob 模式，限定只找 .nix 后缀的文件。
+    # xargs: 将前面的路径列表作为参数传递给 nixfmt
+
+  ## registry
+  # nix registry list
+  # global flake:nixpkgs github:NixOS/nixpkgs/nixpkgs-unstable
+
+  ## use local path- version nixpkgs 
+  # nix registry add nixpkgs ~/dev/ops/dot-tools/nix/_local/nixpkgs
+  # user   flake:nixpkgs path:/Users/rj/dev/dot-tools/nix/_local/nixpkgs
+  # global flake:nixpkgs github:NixOS/nixpkgs/nixpkgs-unstable
+
+  # flake:home-manager github:nix-community/home-manager
+  # nix registry add home-manager ~/dev/ops/dot-tools/nix/_local/home-manager
+  rg: |
+    nix registry add nixpkgs $(pwd)/_local/nixpkgs
+  rg.ls: |
+    nix registry list > doc/nix-registry.txt
+
+  ## Setup
+  v: |
+    nix --version
+    # in /run/current-system/sw/bin
+    darwin-version
+
+  man: |
+    mkdir -p doc/manual && cd doc/manual
+
+    export TERM=dumb
+    nix help > nix-help.txt
+    
+    for cmd in develop flake repl registry; do
+      nix $cmd --help > nix-$cmd-help.txt
+    done
+
+  tmpl.ls: |
+    nix flake show templates
+
+    # nix templates
+    # https://github.com/NixOS/templates/blob/master/README.md
+    # nix flake show github:nixos/templates
+    
+    # nix flake init -t github:nixos/templates#python
+    ## use registry templates
+    # nix flake init -t templates#python
+
+    # nix flake init|new 使用相同的template unless use -t xxx 
+    # use templates#trivial by default 
+    # https://github.com/NixOS/templates/blob/master/trivial/flake.nix
+  repo.tmpl: |
+    git clone --depth 3 git@github.com/NixOS/templates
+
+
+
+  local: 
+    aliases: [l]
+    cmds: 
+    - |
+      mkdir -p _local
+      
+  # nix-instantiate --eval -E '<nixpkgs>'
+  # /nix/store/ky7q5vm0kgv6qbq5gfzmv1ki79qr4q0z-source
+
+  pkgs.25: |
+    new_branch=nixpkgs-25.11-darwin
+
+    cd _local/nixpkgs
+
+    # 1. 修改远程抓取的配置，让它指向新分支
+    git remote set-branches origin $new_branch
+
+    # 2. 获取新分支的最新数据（深度仍为 1）
+    git fetch --depth 1 origin $new_branch
+
+    # 3. 强制切换到新分支
+    git checkout $new_branch
+
+  repo.clone.pkgs: |
+    mkdir -p _local && cd _local
+    # too large
+    git clone --depth 1 https://github.com/NixOS/nixpkgs.git
+  repo.tar.pkgs: |
+    mkdir -p _local && cd _local
+    curl https://github.com/NixOS/nixpkgs/archive/refs/tags/25.11.tar.gz -o nixpkgs-25.11.tar.gz
+    tar -zxvf nixpkgs-25.11.tar.gz
+    # todo
+    # nix-prefetch-url --unpack https://github.com/NixOS/nixpkgs/archive/refs/tags/25.11.tar.gz
+    # nix-prefetch-url --unpack --print-path https://github.com/NixOS/nixpkgs/archive/refs/tags/25.11.tar.gz
+    # 1zn1lsafn62sz6azx6j735fh4vwwghj8cc9x91g5sx2nrg23ap9k
+    # /nix/store/4kgswip44plgfqyllkhwrs4rb9cqz5rz-25.11.tar.gz
+    # ls -d /nix/store/*/ | grep 25.11.tar.gz 
+    # /nix/store/4kgswip44plgfqyllkhwrs4rb9cqz5rz-25.11.tar.gz/
+    ## in flake project
+    # nix store prefetch-file --unpack https://github.com/NixOS/nixpkgs/archive/refs/tags/25.11.tar.gz --json
+
+  repo.clone.darwin: |
+    mkdir -p _local && cd _local
+    git clone --depth 5 git@github.com:nix-darwin/nix-darwin.git
+  repo.clone.hm: |
+    mkdir -p _local && cd _local
+    git clone --depth 5 git@github.com:nix-community/home-manager.git
+
+  ln: |
+    mkdir -p _local
+    ln -snf /etc/nix _local/nix-etc-config
+
+    mkdir -p ~/.config/nix
+    ln -snf ~/.config/nix _local/nix-dot-config
+  
+    ln -snf /nix _local/nix-root
+
+    ln -snf /etc/static _local/etc-static
+
+  ln.dot: |
+    ln -s $(pwd) ~/.nix
+
+  uninstall: /nix/nix-installer uninstall
+
+  # 由于 Nix 每次下载都会保存在 /nix/store，时间久了会占用大量硬盘空间。
+  # 清理无用缓存：
+  store.clean: |
+    # 1. 手动清理过期的垃圾
+    nix-collect-garbage -d
+
+    # 2. 手动执行存储优化（可能需要一点时间，因为它要计算文件指纹）
+    # nix-store --optimise
+    
+    du -hs /nix/store
+    
+  # 这个命令会删除所有不再被任何项目或 profile 引用的软件包。
+  # 离线模式：
+  # 如果你确定已经下载过所有东西，可以使用 --offline 标志强制 Nix 不联网：
+  # nix build . --offline
+
+  setup.step1: |
+    # https://github.com/nix-darwin/nix-darwin?tab=readme-ov-file#step-1-creating-flakenix
+    # following commands to generate a basic flake.nix inside /etc/nix-darwin:
+
+    sudo mkdir -p /etc/nix-darwin
+    sudo chown $(id -nu):$(id -ng) /etc/nix-darwin
+    cd /etc/nix-darwin
+    # To use Nixpkgs unstable:
+    # nix flake init -t nix-darwin/master
+    # To use Nixpkgs 25.11:
+    nix flake init -t nix-darwin/nix-darwin-25.11
+
+    sed -i '' "s/simple/$(scutil --get LocalHostName)/" flake.nix
+  
+  step2: |
+    sudo nix run nix-darwin/nix-darwin-25.11\#darwin-rebuild -- switch
+
+  ## Standalone home-manager
+  # use.hm: |
+  #   nix run home-manager -- switch
+  #   # nix run home-manager/master -- switch
+  #   # home-manager switch	# 应用当前配置
+  #   # home-manager generations	查看历史版本（回滚神器）
+  #   # nix-collect-garbage -d	清理旧版本，释放磁盘空间
+  #   # man home-configuration.nix	查看本地配置手册
+
+  # setup.hm: |
+  #   nix run home-manager/master -- init --switch .
+  #   # gen flake.nix and home.nix

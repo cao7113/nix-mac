@@ -13,6 +13,10 @@ tasks:
   # nix-repl> :lf .
   # nix-repl> outputs.darwinConfigurations.mac.config.home-manager.users.rj.home.homeDirectory
 
+  pkgs: |
+    nix eval .#darwinConfigurations.mac.config.home-manager.users.${USER}.home.packages --json | jq
+    nix eval .#darwinConfigurations.mac.config.environment.systemPackages --json | jq
+
   ## golab
   # nix-shell -p go
 

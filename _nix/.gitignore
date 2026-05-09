@@ -1,0 +1,6 @@
+result*
+.direnv/
+tmp-*
+/_local
+
+/mac
