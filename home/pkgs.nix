@@ -9,7 +9,7 @@
   home.packages = with pkgs; [
     # # Adds the 'hello' command to your environment. It prints a friendly
     # # "Hello, world!" when run.
-    hello
+    # hello
 
     zoxide # 智能路径跳转：基于权重学习你的目录访问习惯 (替代 cd)
     bat # 增强型 cat：提供语法高亮，常作为 fzf 的预览器

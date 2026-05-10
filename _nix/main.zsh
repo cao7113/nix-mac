@@ -6,14 +6,18 @@ alias np="nix-profile"
 alias nixcmd="command nix"
 alias nixrgcmd="nixcmd registry"
 alias nixflakecmd="nixcmd flake"
-alias nixpcmd="nixcmd profile"
+alias nixprofilecmd="nixcmd profile"
 
 nix_rc_script="${(%):-%x}"
 nix_rc_dir=${nix_rc_script:A:h}
-source "$nix_rc_dir/mac/rc.zsh"
 
 # support old stype commands
 export NIX_PATH=$nix_rc_dir/_local
+
+# 禁用对特定命令的路径扩展（推荐方案）
+alias nix='noglob nix' # nix run nixpkgs#cowsay 
+# nix run nixpkgs\#cowsay -- "Hello"
+# nix run "nixpkgs#cowsay" -- "Hello"
 
 function nix(){
   local act=$1
@@ -95,29 +99,29 @@ function nix-profile(){
 
   case $act in
     l|ls)
-      nixpcmd list "$@"
+      nixprofilecmd list "$@"
       ;;
     rm|del)
-      nixpcmd remove "$@"
+      nixprofilecmd remove "$@"
       ;;
     install)
-      nixpcmd add "$@"
+      nixprofilecmd add "$@"
       ;;
     up)
-      nixpcmd upgrade "$@"
+      nixprofilecmd upgrade "$@"
       ;;
     his|info)
-      nixpcmd history
+      nixprofilecmd history
       ;;
     back)
        nixcmd profile rollback
       ;;
     to)
-      # nixpcmd switch --to "$@"
-       nixpcmd --to "$@"
+      # nixprofilecmd switch --to "$@"
+       nixprofilecmd --to "$@"
       ;;
     *)
-      nixpcmd $act "$@"
+      nixprofilecmd $act "$@"
       ;;
   esac
 }

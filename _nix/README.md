@@ -74,6 +74,7 @@ github:edolstra/nix-warez?dir=blender
 
 ## Nix env setup
 
+- xcode-select --install
 - Install Determinate Nix
   - https://install.determinate.systems/determinate-pkg/stable/Universal
   - https://docs.determinate.systems/
@@ -88,14 +89,19 @@ github:edolstra/nix-warez?dir=blender
     - nix profile list
     - nix profile remove nixfmt
   - Cmd + Shift + P 打开settings.json
-- Install fh - Flakehub CLI
-  - https://docs.determinate.systems/flakehub/cli/
+- Install fh - Flakehub CLI https://docs.determinate.systems/flakehub/cli/
   - profile install
     nix profile add github:DeterminateSystems/fh
-  - add to current shell
+  - current shell only
     nix shell "https://flakehub.com/f/DeterminateSystems/fh/*"
+    nix shell nixpkgs\#hello (使用registry中的nixpkgs)
+    nix shell nixpkgs#pkg1 nixpkgs#pkg2
+    nix shell nixpkgs\#hello --command hello --version
+    nix shell github:NixOS/nixpkgs/nixos-unstable#hello
+    nix run nixpkgs\#cowsay -- "Hello"
   - once run (long build...)
     nix run github:DeterminateSystems/fh -- --help
+    nix run nixpkgs\#hello -- --version
   - check: fh --version
 - nix-darwin with determinate nix and module
 - nix-darwin with home-manager
@@ -104,7 +110,6 @@ github:edolstra/nix-warez?dir=blender
   - nix profile remove pgcli
 
 - direnv
-  xcode-select --install
 - git config
 
 ### direnv and nix-direnv???

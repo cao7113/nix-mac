@@ -193,7 +193,7 @@ tasks:
 
     sed -i '' "s/simple/$(scutil --get LocalHostName)/" flake.nix
   
-  step2: |
+  setup.step2: |
     sudo nix run nix-darwin/nix-darwin-25.11\#darwin-rebuild -- switch
 
   ## Standalone home-manager
