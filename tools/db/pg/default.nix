@@ -16,7 +16,8 @@ let
   # - 不要纠结 MacOS 下预留的id _postgres, 开发环境下 用当前主用户最方便!(否则需要使用launchd.daemons重写nix-darwin中的services.postgresql模块)
 
   pgPkg = pkgs.postgresql_18;
-  # dataDir = "/var/lib/postgresql/17";
+  # nix eval .#darwinConfigurations.mac.config.services.postgresql.dataDir
+  # dataDir = "/var/lib/postgresql/18";
   runAs = username; # config.system.primaryUser;
   pgUser = "postgres";
   pgPass = "postgres";
@@ -30,6 +31,8 @@ in
     initdbArgs = [
       # We should really change the (internal) `superUser` option instead 🤔
       "-U ${runAs}"
+      "--encoding=UTF8"
+      "--locale=en_US.UTF-8"
     ];
 
     package = pgPkg;
@@ -142,6 +145,14 @@ in
       # pkgs.harlequin
     ];
 
+    # 环境变量增强
+    home.sessionVariables = {
+      # 默认编辑器，输入 \e 时调用
+      PSQL_EDITOR = "vim";
+      # 工业级分页设置：S(不折行), R(保留颜色), X(防止清屏), F(小内容不分页)
+      PAGER = "less -SRXF";
+    };
+
     home.shellAliases = {
       pg = "psql -h localhost -U ${runAs} -d postgres";
       pglogs = "tail -f ${config.services.postgresql.settings.log_directory}/postgresql-*.log";
@@ -183,14 +194,6 @@ in
       \set QUIET 0
       \echo 'psqlrc loaded.'
     '';
-
-    # 3. 环境变量增强
-    home.sessionVariables = {
-      # 工业级分页设置：S(不折行), R(保留颜色), X(防止清屏), F(小内容不分页)
-      PAGER = "less -SRXF";
-      # 默认编辑器，输入 \e 时调用
-      PSQL_EDITOR = "vim";
-    };
   };
 
 }

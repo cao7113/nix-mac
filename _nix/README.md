@@ -5,6 +5,12 @@
 - https://home-manager-options.extranix.com/?query=direnv&release=release-25.11
 - https://nix.dev/manual/nix/2.28/introduction.html
 
+## Intaller
+
+- https://zenn.dev/trifolium/articles/da11a428c53f65?locale=en
+- [a fork of the Determinate Nix Installer](https://github.com/NixOS/nix-installer)
+- https://github.com/DeterminateSystems/nix-installer
+
 ## How to use？
 
 ### 整体思路

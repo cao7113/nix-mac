@@ -29,3 +29,4 @@ dot-sec本身是独立的git仓库，并软链接到~/.sec，是 home-manager可
 ## Links
 
 - https://github.com/HestHub/nixos
+- [Hest great practice](https://callistaenterprise.se/blogg/teknik/2025/05/28/nix-darwin/)
