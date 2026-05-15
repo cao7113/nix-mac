@@ -1,0 +1,4 @@
+git@github.com:direnv/direnv.git
+git@github.com:nix-community/home-manager.git
+git@github.com:nix-darwin/nix-darwin.git
+git@github.com:Mic92/sops-nix.git
