@@ -2,6 +2,7 @@
   config,
   pkgs,
   lib,
+  username,
   ...
 }:
 {
@@ -20,7 +21,7 @@
       # Enables parallel evaluation (remove this setting or set the value to 1 to disable)
       eval-cores = 0;
       extra-experimental-features = [
-        "build-time-fetch-tree" # Enables build-time flake inputs
+        # "build-time-fetch-tree" # Enables build-time flake inputs
       ];
 
       # 1. 代理配置（核心：针对你的 Shadowsocks 1087 端口）
@@ -41,6 +42,13 @@
       trusted-public-keys = [
         "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
         "flakehub.com-1:7B9E0L0FeSioEn6L/ISdVvPkOoDnWMx8DswHxnTIbhg=" # 必须添加 Flakehub 的公钥
+      ];
+
+      trusted-users = [
+        "root"
+        # 这里添加你的用户名，允许你在不使用 sudo 的情况下执行 nix 命令
+        # 注意：这会影响安全性，请确保只添加受信任的用户
+        "${username}"
       ];
     };
 

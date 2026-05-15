@@ -13,6 +13,12 @@
 
 ## How to use？
 
+## Github API access rate-limit
+
+- https://devenv.sh/getting-started/#3-configure-a-github-access-token-optional
+
+config in ~/.nix/nix.config
+
 ### 整体思路
 
 - 登录Apple账户 & 可进入命令行

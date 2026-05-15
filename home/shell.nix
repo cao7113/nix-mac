@@ -76,8 +76,6 @@
     };
 
     initContent = ''
-      export DIRENV_WARN_TIMEOUT=30s
-
       # 性能：如果不想每次都扫描，可以在这里添加 profiling 逻辑
       zmodload zsh/zprof
 
@@ -169,15 +167,6 @@
   programs.zoxide = {
     enable = true;
     enableZshIntegration = true; # 自动在 zsh 中初始化 zoxide (z 命令)
-  };
-
-  # 开启 direnv 并启用 Zsh 集成, 自动进入 devShell 的利器
-  programs.direnv = {
-    enable = true;
-    enableZshIntegration = true;
-    # https://github.com/nix-community/nix-direnv
-    nix-direnv.enable = true; # 强烈建议同时开启这个，让 direnv 支持 Nix 速度起飞
-    # config.global.hide_env_diff = true;
   };
 
   # ---------------------------------------------------------------------------

@@ -20,11 +20,11 @@
         # mise install
         tools = {
           usage = "latest"; # 增强 mise 的自动补全功能
+          erlang = "latest";
+          elixir = "latest";
           # node = "20";
           # python = "3.11";
           # go = "latest";
-          # elixir = "latest"
-          # erlang = "latest"
           # fnox = "latest"
           # bitwarden = "latest"
         };
@@ -46,27 +46,6 @@
 
       # Trust them with `mise trust`. See https://mise.jdx.dev/cli/trust.html for more information.
       # mise ERROR Run with --verbose or MISE_VERBOSE=1 for more information
-
-      function m(){
-        local act=$1
-
-        (( $# > 0 )) && shift
-
-        case $act in 
-          rg)
-            mise registry "$@"
-            ;;
-          remote)
-            mise ls-remote "$@"
-            ;;
-          trust|ok|allow)
-            mise trust "$@"
-            ;;
-          *) 
-            mise $act "$@" 
-            ;;
-        esac
-      }
     '';
   };
 }

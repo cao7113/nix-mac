@@ -114,9 +114,9 @@
           }
 
           ## file modules
-          darwin/_main.nix
-          home/_main.nix
-          tools/_main.nix
+          ./darwin # /default.nix
+          ./home
+          ./tools
         ];
       };
 

@@ -1,8 +1,10 @@
-alias allow="direnv allow"
 alias direnvcmd="command direnv"
+alias allow="direnvcmd allow"
 
-function denv(){
+function direnv(){
   local act=$1 
+  (( $# > 0 )) && shift
+
   local this_script="${(%):-%x}"
 
   case $act in
@@ -16,20 +18,19 @@ function denv(){
       direnvcmd --version
       ;;
     a)
-      shift
-      direnvcmd allow $@
+      direnvcmd allow "$@"
       ;;
     f|file)
       echo $this_script
       ;;
     *)
-      direnvcmd "$@"
+      direnvcmd $act "$@"
       ;;
   esac
 }
 
 # 列出并统计所有已授权的 direnv 项目, 默认路径排序，-t时间排序
-function denv-list() {
+function direnv-list() {
     local allow_dir="${XDG_DATA_HOME:-$HOME/.local/share}/direnv/allow"
     [[ ! -d "$allow_dir" ]] && { echo "No direnv allow directory found."; return 1 }
 
@@ -91,7 +92,7 @@ function denv-list() {
     done
 }
 
-function denv-clean() {
+function direnv-clean() {
     local allow_dir="${XDG_DATA_HOME:-$HOME/.local/share}/direnv/allow"
     if [[ ! -d "$allow_dir" ]]; then
         echo "No direnv allow directory found."

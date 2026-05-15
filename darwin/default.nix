@@ -33,7 +33,7 @@
   system.defaults.smb.NetBIOSName = "mac";
 
   imports = [
-    ./determinate.nix
+    ../_nix/determinate/default.nix
     ./pkgs.nix
     ./homebrew
     # launchd/test.nix

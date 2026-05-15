@@ -100,3 +100,4 @@ function nix-mac-home-manager(){
 }
 
 source $mac_rc_dir/_nix/main.zsh
+source $mac_rc_dir/tools/main.zsh
