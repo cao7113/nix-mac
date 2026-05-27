@@ -1,0 +1,46 @@
+nix git:(up) ✗ t setup
+task: [setup] curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+info: downloading the Determinate Nix Installer
+INFO nix-installer v3.16.3
+`nix-installer` needs to run as `root`, attempting to escalate now via `sudo`...
+Password:
+INFO nix-installer v3.16.3
+INFO For a more robust Nix installation, use the Determinate package for macOS: https://dtr.mn/determinate-nix
+Nix install plan (v3.16.3)
+Planner: macos (with default settings)
+
+Planned actions:
+
+- Install Determinate Nixd
+- Create an encrypted APFS volume `Nix Store` for Nix on `disk3` and add it to `/etc/fstab` mounting on `/nix`
+- Extract the bundled Nix (originally from /nix/store/msvb8a935ccsjv6p6nbr0j5a2djvnwdb-nix-binary-tarball-3.16.3/nix-3.16.3-aarch64-darwin.tar.xz) to `/nix/temp-install-dir`
+- Create a directory tree in `/nix`
+- Synchronize /nix/var ownership
+- Move the downloaded Nix into `/nix`
+- Synchronize /nix/store ownership
+- Create build users (UID 351-382) and group (GID 350)
+- Configure Time Machine exclusions
+- Setup the default Nix profile
+- Place the Nix configuration in `/etc/nix/nix.conf`
+- Configure the shell profiles
+- Configuring zsh to support using Nix in non-interactive shells
+- Create a `launchctl` plist to put Nix into your PATH
+- Configure the Determinate Nix daemon
+- Remove directory `/nix/temp-install-dir`
+
+Proceed? ([Y]es/[n]o/[e]xplain): y
+INFO Step: Install Determinate Nixd
+INFO Step: Create an encrypted APFS volume `Nix Store` for Nix on `disk3` and add it to `/etc/fstab` mounting on `/nix`
+INFO Step: Provision Nix
+INFO Step: Create build users (UID 351-382) and group (GID 350)
+INFO Step: Configure Time Machine exclusions
+INFO Step: Configure Nix
+INFO Step: Configuring zsh to support using Nix in non-interactive shells
+INFO Step: Create a `launchctl` plist to put Nix into your PATH
+INFO Step: Configure the Determinate Nix daemon
+INFO Step: Remove directory `/nix/temp-install-dir`
+INFO Running self test for shell sh
+INFO Running self test for shell bash
+INFO Running self test for shell zsh
+Nix was installed successfully!
+To get started using Nix, open a new shell or run `. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh`

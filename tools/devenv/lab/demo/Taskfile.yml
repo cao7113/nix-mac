@@ -1,0 +1,8 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: echo hi devenv
+
+  setup: |
+    devenv init

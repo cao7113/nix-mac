@@ -1,0 +1,41 @@
+# https://taskfile.dev
+version: "3"
+
+vars:
+  FLY_APP_NAME: fly-try-up
+
+tasks:
+  default: echo fly {{.FLY_APP_NAME}} app at https://fly.io/docs
+
+  sh: fly ssh console
+  ssh: fly ssh console
+  st: fly status
+  reup: fly m restart
+  log: fly logs
+  open: fly open
+
+  # create new app and fly.toml
+  launch: fly launch --debug --verbose # --now
+  # deploy new app version
+  dep: fly deploy
+  # fly deploy --image ghcr.io/cao7113/xxx
+
+  s1: fly scale count 1 --yes
+  s0: fly scale count 0 --yes
+  ## dns dig https://fly.io/docs/networking/private-networking/#fly-io-internal-dns
+  # apps: dig _apps.internal txt
+  rm: fly apps destroy {{.FLY_APP_NAME}}
+
+  vm: fly machine ls
+  ls: fly app ls
+  db: fly postgres connect -a {{.FLY_DB_APP_NAME}}
+  # plain env and secrets
+  env: fly config env
+  sec: fly secrets ls
+  show: fly scale show
+
+  # fly scale count 2
+  # sets up a root certificate for your account and then issues a certificate.
+  ssh-agent: fly ssh issue --agent
+  board: fly dashboard
+  # Add a dedicated ipv4 with: fly ips allocate-v4

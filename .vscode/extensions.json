@@ -1,0 +1,6 @@
+{
+    "recommendations": [
+        // https://marketplace.visualstudio.com/items?itemName=jnoortheen.nix-ide
+        "jnoortheen.nix-ide"
+    ]
+}

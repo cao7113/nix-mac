@@ -1,0 +1,11 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: echo hi nix lab
+
+  # git add -N .
+  # nix build path:.
+  # check: nix run github:DeterminateSystems/flake-checker 
+
+ 

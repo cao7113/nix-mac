@@ -1,0 +1,9 @@
+# https://taskfile.dev
+version: '3'
+tasks:
+  # https://www.metabase.com/docs/latest/operations-guide/running-metabase-on-docker.html
+  
+  install:
+    desc: install metabase app
+    cmds:
+      - brew install homebrew/cask/metabase

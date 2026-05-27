@@ -1,0 +1,7 @@
+.direnv
+result
+tmp-*
+_local*
+.installed_ok
+*.zsh.zwc
+*~

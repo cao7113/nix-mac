@@ -1,0 +1,99 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: |
+    nix run
+    # nix run path:.
+  dev: nix develop path:.
+  b: nix build path:.
+  # noglob nix build .#hello path:.
+  m: nix flake metadata path:.
+  show: nix flake show path:.
+  der: nix show-derivation
+
+  # nix-store --query --referrers /nix/store/*-nixpkgs
+
+  # tests
+  check: nix flake check path:. --all-systems -L
+  
+  # 如果你已经安装了 Nix，不需要去 GitHub 找，可以直接在终端输入命令来查看这个包的定义位置：
+  # 查看该包在本地 nixpkgs 缓存中的物理路径
+  e: nix edit nixpkgs#hello
+
+  # nix repl --expr 'import <nixpkgs> {}'
+  # nix-repl> hello.meta.position
+  # # 这会输出该包在磁盘上的具体文件路径和行号
+
+  # builtins.nixVersion
+  # builtins.currentSystem
+  # builtins.add 1 2 # => 3
+  # builtins.toString 123 #=> "123"
+  # builtins.readFile "/nix/store/5y8bb8i11ns2cpvvv24p9yc1r0qw1157-api"
+
+  # nix-repl> :p  builtins.nixPath
+  # [
+  #   {
+  #     path = "flake:https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/*.tar.gz";
+  #     prefix = "nixpkgs";
+  #   }
+  # ]
+
+  # let
+  # f = {a, b, ...}@args: a + b + args.c;
+  # in
+  # f { a = 1; b = 2; c = 3; }
+
+  try.sh: |
+    nix shell nixpkgs\#cowsay nixpkgs\#lolcat
+    # $ cowsay lolcat
+
+  repl:
+    aliases: [r, rp]
+    cmds: 
+    - |
+      # :?, :help for help
+      nix repl # :q or Ctrl + D to quit
+
+      # Some examples show a fully evaluated data structure for clarity. If your output does not match the example, try prepending :p to the input expression.
+      # nix-repl> { a.b.c = 1; }
+      # { a = { ... }; }
+      # nix-repl> :p { a.b.c = 1; }
+      # { a = { b = { c = 1; }; }; }
+
+      echo "input hello.meta.position # to get position"
+      # hello.meta.position
+      nix repl -f ~/.nix/_local/nixpkgs
+
+  # nix-instantiate --eval will try to read from default.nix if no file name is specified
+  # echo "{ a.b.c = 1; }" > file.nix
+  # nix-instantiate --eval file.nix
+  # nix-instantiate --eval --strict file.nix
+
+  # Nix Flakes 默认运行在 “纯净模式”（Pure Mode） 下
+  # flake.lock 的优先级高于 nix registry
+
+  demo: |
+    prj_path=_local/demo
+    prj_name=$(basename $prj_path)
+    echo "init $prj_path"
+    mkdir -p $prj_path && cd $prj_path
+    nix flake init
+
+  init: |
+    nix flake init -t templates#trivial .
+
+  ## flakehub & fh 
+  # https://flakehub.com/flakes
+  # https://flakehub.com/flake/NixOS/nixpkgs?view=usage
+  fh.try: |
+    nix shell "https://flakehub.com/f/DeterminateSystems/fh/*.tar.gz"
+  
+  fh.demo: |
+    mkdir _local/fh-demo && cd _local/fh-demo
+    nix run "https://flakehub.com/f/DeterminateSystems/fh/0" -- init
+  
+  ## flake-part
+  fparts: |
+    mkdir fparts && cd fparts
+    nix flake init -t github:hercules-ci/flake-parts

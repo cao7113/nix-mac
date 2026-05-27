@@ -1,0 +1,8 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: |
+    # $NIX_PATH or -I
+    # export NIX_PATH=~/.nix/_local/nixpkgs
+    nix-shell -p jq --run "nix-instantiate --eval --json --strict --show-trace | jq"

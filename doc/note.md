@@ -1,0 +1,5 @@
+# Note
+
+```
+getconf DARWIN_USER_TEMP_DIR
+```

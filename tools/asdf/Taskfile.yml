@@ -1,0 +1,13 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: echo hi task
+  # local settings in ~/.asdf
+
+  ls: asdf list
+
+  setup: |
+    brew install asdf
+  uninstall: |
+    brew uninstall asdf
