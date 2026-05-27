@@ -1,160 +1,124 @@
 # Mac loves Nix
 
-我的 `nix-darwin` + `home-manager` 配置，使用 Determinate Nix 管理 macOS 环境。
+My `nix-darwin` + `home-manager` setup, using Determinate Nix to manage the macOS environment.
 
-## 概览
+## Overview
 
-- 使用 `determinate-nix` 安装并管理 `nix` 版本。
-- `nix-mac` 为公共仓库，基于 `nix-darwin` + `home-manager`，管理 macOS 基础软件，如 `zsh`、`postgresql` 等。
-- `dot-sec` 为私有仓库，基于 `home-manager`，管理私有配置数据，包含 `sops-nix`、`age`、`ssh` 等。
-- `dot-sec` 是独立 git 仓库，软链接到 `~/.sec`，作为 `home-manager` 可选子模块。
-  - 当 `~/.sec` 存在时，会随 `darwin-rebuild` 一起部署。
-  - 不存在时不会影响 `nix-darwin` 部署，仅提示缺失。
+- Use `determinate-nix` to install and manage the Nix version.
+- `nix-mac` is a public repository based on `nix-darwin` + `home-manager`, managing essential macOS software like `zsh`, `postgresql`, etc.
+- `dot-sec` is a private repository based on `home-manager`, managing private configuration data, including `sops-nix`, `age`, `ssh`, and more.
+- `dot-sec` is a standalone git repo, symlinked to `~/.sec` as an optional `home-manager` submodule.
+  - If `~/.sec` exists, it will be deployed together with `darwin-rebuild`.
+  - If it doesn't exist, it won't affect the `nix-darwin` deployment—just a missing notice will be shown.
 
-## 快速开始
+## Quick Start
 
-1. 安装 Determinate Nix。
-2. 克隆 `nix-mac` 仓库。
-3. 运行 `darwin-rebuild` 切换配置。
-4. 执行 `iup` 进行后续初始化。
+1. Install Determinate Nix.
+2. Clone the `nix-mac` repository.
+3. Run `darwin-rebuild` to switch configurations.
+4. Run `iup` for further initialization.
 
-## 安装与初始化
+## Setup
 
-### 1. 前置准备
+### 1. Prerequisites
 
-- 登录 Apple ID，保证网络畅通。
-- 安装 `Homebrew`、`Xcode Command Line Tools` 时可能需要较多下载。
+- Sign in to your Apple ID and ensure a stable internet connection.
+- Installing `Homebrew` and `Xcode Command Line Tools` may require significant downloads.
 
-### 2. 安装 Determinate Nix
+### 2. Install Determinate Nix
 
-推荐使用 Determinate Nix Installer：
+Recommended: use the Determinate Nix Installer:
 
 ```bash
 curl -fsSL https://install.determinate.systems/nix | sh -s -- install
 ```
 
-如果需要 pkg 安装包，可参考：
-
+For the pkg installer, see:
 - https://docs.determinate.systems/getting-started/individuals/
 - https://install.determinate.systems/determinate-pkg/stable/Universal
 
-参考文档：
-
+References:
 - https://zenn.dev/trifolium/articles/da11a428c53f65?locale=en
 - https://github.com/NixOS/nix-installer
 - https://github.com/DeterminateSystems/nix-installer
 
-测试安装：
+Test the installation:
 
 ```bash
-nix profile add nixpkgs#hello -vv
+nix shell nixpkgs#hello
+nix shell nixpkgs#hello --command hello --version
+nix run nixpkgs#hello -- --version
+nix shell github:NixOS/nixpkgs/nixos-unstable#hello
+nix run nixpkgs#cowsay -- "Hello"
+# nix shell nixpkgs#pkg1 nixpkgs#pkg2
 ```
 
-### 3. 安装 `nix-mac`
+### 3. Install `nix-mac`
 
 ```bash
+# First time
 mkdir -p ~/dev && cd ~/dev
 git clone -v --depth=3 https://github.com/cao7113/nix-mac.git
 cd nix-mac
 sudo nix run nix-darwin/nix-darwin-25.11#darwin-rebuild -- switch --flake .#mac --show-trace --impure
-# 然后执行
+# Then
 iup
 ```
 
-### 4. 安装 Xcode 命令行工具
+### 4. Install Xcode Command Line Tools
 
 ```bash
 xcode-select --install
-```
-
-如果出现以下提示，则需要安装开发工具：
-
-> xcode-select: note: No developer tools were found, requesting install.
-
-如果开发工具位于非默认路径，可使用：
-
-```bash
-sudo xcode-select --switch path/to/Xcode.app
-```
-
-检查当前路径：
-
-```bash
+# Check the current path:
 xcode-select -p
 ```
 
-## 说明与建议
+## Notes & Recommendations
 
 ### Homebrew
 
-如果网络不好，可在 `flake.nix` 中临时注释掉 Homebrew 部分配置。
+If your network is unstable, you can temporarily comment out the Homebrew section in `flake.nix`.
 
-### VSCode 扩展
+### VSCode Extensions
 
-推荐安装 `jnoortheen.nix-ide`：
+It is recommended to install `jnoortheen.nix-ide`:
 
 - https://github.com/nix-community/vscode-nix-ide?tab=readme-ov-file#language-servers
 
 ### Flakehub CLI (`fh`)
 
-安装：
-
 ```bash
 nix profile add github:DeterminateSystems/fh
-```
-
-临时 shell 安装：
-
-```bash
+# Temporary shell install:
 nix shell "https://flakehub.com/f/DeterminateSystems/fh/*"
-```
 
-示例用法：
-
-```bash
-nix shell nixpkgs#hello
-nix shell nixpkgs#pkg1 nixpkgs#pkg2
-nix shell nixpkgs#hello --command hello --version
-nix shell github:NixOS/nixpkgs/nixos-unstable#hello
-nix run nixpkgs#cowsay -- "Hello"
-```
-
-运行后：
-
-```bash
 nix run github:DeterminateSystems/fh -- --help
-nix run nixpkgs#hello -- --version
-```
-
-检查版本：
-
-```bash
 fh --version
 ```
 
-### 生成初始 SSH Key
+### Generate Initial SSH Key
 
 ```bash
 gh auth login
 gh ssh add ~/.ssh/id_ed25519.pub
 ```
 
-### GitHub API 访问限额
+### GitHub API Rate Limits
 
-建议参考：
+See:
 
 - https://devenv.sh/getting-started/#3-configure-a-github-access-token-optional
 
-### 代理设置
+### Proxy Settings
 
-网络不稳定时可使用 ShadowsocksNG 代理：
+If your network is unstable, you can use ShadowsocksNG:
 
 ```bash
 export http_proxy=http://127.0.0.1:1087
 export https_proxy=http://127.0.0.1:1087
 ```
 
-## 参考链接
+## References
 
 - https://callistaenterprise.se/blogg/teknik/2025/05/28/nix-darwin/
 - https://github.com/HestHub/nixos
