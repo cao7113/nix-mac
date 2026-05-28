@@ -2,9 +2,6 @@
 set -e
 
 # zsh -c "$(curl -fsSL https://raw.githubusercontent.com/cao7113/nix-mac/main/setup.sh)"
-# below not work for brew
-# curl -fsSL https://raw.githubusercontent.com/cao7113/nix-mac/main/setup.sh | zsh
-# sudo nix run nix-darwin/nix-darwin-25.11#darwin-rebuild -- switch --flake .#mac --impure --show-trace
 
 echo "=== 开始设置 nix-mac 环境 ==="
 

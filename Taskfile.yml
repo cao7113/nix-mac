@@ -22,10 +22,6 @@ tasks:
   new.mac: |
     nix flake new --template "https://flakehub.com/f/DeterminateSystems/flake-templates/*#nix-darwin" mac
 
-  use: |
-    sudo darwin-rebuild switch --flake .\#mac
-    # sudo nix run nix-darwin/nix-darwin-25.11\#darwin-rebuild -- switch --flake .\#mac
-
   b: |
     darwin-rebuild build --flake .#mac
   repl: |
@@ -97,8 +93,6 @@ tasks:
     # https://github.com/NixOS/templates/blob/master/trivial/flake.nix
   repo.tmpl: |
     git clone --depth 3 git@github.com/NixOS/templates
-
-
 
   local: 
     aliases: [l]
@@ -191,11 +185,8 @@ tasks:
     # nix flake init -t nix-darwin/master
     # To use Nixpkgs 25.11:
     nix flake init -t nix-darwin/nix-darwin-25.11
-
     sed -i '' "s/simple/$(scutil --get LocalHostName)/" flake.nix
   
-  setup.step2: |
-    sudo nix run nix-darwin/nix-darwin-25.11\#darwin-rebuild -- switch
 
   ## Standalone home-manager
   # use.hm: |
@@ -209,7 +200,6 @@ tasks:
   # setup.hm: |
   #   nix run home-manager/master -- init --switch .
   #   # gen flake.nix and home.nix
-
 
   fmt: |
     nix fmt
@@ -226,9 +216,6 @@ tasks:
   pkgs: |
     nix eval .#darwinConfigurations.mac.config.home-manager.users.${USER}.home.packages --json | jq
     nix eval .#darwinConfigurations.mac.config.environment.systemPackages --json | jq
-
-  ## golab
-  # nix-shell -p go
 
   sops.repo: |
     git clone --depth 1 git@github.com:Mic92/sops-nix.git _local/sops-nix

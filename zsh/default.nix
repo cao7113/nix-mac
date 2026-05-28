@@ -71,7 +71,7 @@
         # zsh helpers from nix-mac
         source "$nix_mac_home/main.zsh"
 
-        # zsh custom helpers
+        # zsh module helpers
         DSH_PROFILE_ID="dummy" source "$nix_mac_home/zsh/main.zsh"
       ''
     ];

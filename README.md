@@ -91,7 +91,6 @@ It is recommended to install `jnoortheen.nix-ide`:
 nix profile add github:DeterminateSystems/fh
 # Temporary shell install:
 nix shell "https://flakehub.com/f/DeterminateSystems/fh/*"
-
 nix run github:DeterminateSystems/fh -- --help
 fh --version
 ```
@@ -104,8 +103,6 @@ gh ssh add ~/.ssh/id_ed25519.pub
 ```
 
 ### GitHub API Rate Limits
-
-See:
 
 - https://devenv.sh/getting-started/#3-configure-a-github-access-token-optional
 

@@ -65,8 +65,11 @@ function nix-mac(){
     repo)
       open https://github.com/nix-darwin/nix-darwin
       ;;
+    run|do)
+      darwin-rebuild --flake $this_dir "$@"
+      ;;
     *)
-      darwin-rebuild $act --flake $this_dir "$@"
+      cd $this_dir
       ;;
   esac
 }

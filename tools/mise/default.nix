@@ -22,6 +22,7 @@
         # mise install
         tools = {
           usage = "latest"; # 增强 mise 的自动补全功能
+          fnox = "latest";
           # erlang = "latest";
           # elixir = "latest";
           # node = "20";
