@@ -19,6 +19,9 @@
         vis)
           ghcmd repo view --json visibility --jq .visibility
           ;;
+        cl|clone)
+          gh-smart-clone "$@"
+          ;;
         remote)
           gh-set-remote "$@"
           ;;
@@ -27,6 +30,77 @@
           ghcmd "$act" "$@"
           ;;
       esac
+    }
+
+    function gh-user() {
+        # 定义缓存文件路径
+        local cache_dir="''${XDG_CACHE_HOME:-''$HOME/.cache}"
+        local cache_file="$cache_dir/gh-user.cache"
+        local username=""
+
+        # 1. 优先级最高：检查环境变量 GH_USER
+        if [[ -n "$GH_USER" ]]; then
+            echo "$GH_USER"
+            return 0
+        fi
+
+        # 2. 优先级次之：检查本地文件缓存
+        if [[ -f "$cache_file" ]]; then
+            username=$(cat "$cache_file" 2>/dev/null)
+            if [[ -n "$username" ]]; then
+                echo "$username"
+                return 0
+            fi
+        fi
+
+        # 3. 优先级最低：通过 API 获取
+        # 确保 gh 命令存在
+        if ! command -v gh &>/dev/null; then
+            echo "错误: 未找到 gh 命令，请先安装 GitHub CLI" >&2
+            return 1
+        fi
+
+        # 调用 API 获取用户名
+        username=$(gh api user --jq '.login' 2>/dev/null)
+
+        if [[ -n "$username" ]]; then
+            # 创建缓存目录并写入缓存
+            mkdir -p "$cache_dir"
+            echo "$username" > "$cache_file"
+            
+            echo "$username"
+            return 0
+        else
+            echo "错误: 无法获取 GitHub 用户名，请检查登录状态 (gh auth status)" >&2
+            return 1
+        fi
+    }
+
+    function gh-smart-clone() {
+        # 确保传入了参数
+        if [[ -z "$1" ]]; then
+            echo "错误: 请输入仓库名称或 owner/repo"
+            return 1
+        fi
+
+        local target="$1"
+
+        # 正则表达式解释：
+        # ^[a-zA-Z0-9._-]+$  -> 纯仓库名格式（不包含斜杠 /）
+        # ^[^/]+/[^/]+$      -> 标准的 owner/repo 格式（包含且仅包含一个斜杠 /）
+
+        if [[ "$target" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+            # 如果是纯 slink 格式，自动补全 owner
+            echo "检测到 slink 格式，自动转换为: cao7113/$target"
+            ghcmd repo clone "$(gh-user)/$target"
+        elif [[ "$target" =~ ^[^/]+/[^/]+$ ]]; then
+            # 如果已经是 owner/repo 格式，保持原样
+            echo "检测到 owner/repo 格式，保持原样: $target"
+            ghcmd repo clone "$target"
+        else
+            # 其他格式（例如完整的 URL：https://github.com/...），直接透传给 gh
+            ghcmd repo clone "$target"
+        fi
     }
   '';
 
@@ -47,7 +121,6 @@
         logout = "auth logout";
         # gh ssh list
         ssh = "ssh-key";
-        clone = "repo clone";
         pco = "pr checkout";
         pv = "pr view";
         pl = "pr list";

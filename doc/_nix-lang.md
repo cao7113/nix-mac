@@ -17,11 +17,15 @@ let
 in
 pkgs.mkShellNoCC {
   packages = with pkgs; [ cowsay ];
+  # 两个单引号'' 是nix的片段插值语法，可使用 $var
   shellHook = ''
     cowsay ${message}
+    # 环境变量插值，两个单引号+$
+    local test="''$USER"
   '';
 }
 ```
+
 
 ## 语法
 
