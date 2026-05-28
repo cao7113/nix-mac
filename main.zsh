@@ -12,6 +12,7 @@ function nix-mac(){
 
   case $act in
     home)
+      # echo $nix_mac_home
       echo $this_dir
       ;;
     j|cd)
@@ -110,7 +111,8 @@ function nix-mac-home-manager(){
   esac
 }
 
-export nix_mac_home=$(nix-mac home)
+# nix_mac_home exported by zsh/default.nix
+DSH_PROFILE_ID="dummy" source "$nix_mac_home/zsh/main.zsh"
 source $nix_mac_home/tools/main.zsh
 
 ## Nix helpers

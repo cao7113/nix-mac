@@ -65,14 +65,10 @@
         zstyle ':completion:*' use-cache yes
         zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/zcompcache"
 
-        # todo fix this hard-coded path
-        export nix_mac_home="${config.home.homeDirectory}/dev/nix-mac"
 
+        export nix_mac_home="${config.home.homeDirectory}/dev/nix-mac"
         # zsh helpers from nix-mac
         source "$nix_mac_home/main.zsh"
-
-        # zsh module helpers
-        DSH_PROFILE_ID="dummy" source "$nix_mac_home/zsh/main.zsh"
       ''
     ];
 
