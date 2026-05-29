@@ -6,8 +6,7 @@
   ...
 }:
 {
-  # gh: GitHub CLI 工具，极大提升与 GitHub 交互的效率 https://cli.github.com/
-
+  # gh: GitHub CLI https://cli.github.com/
   programs.zsh.initContent = ''
     alias ghcmd="command gh" 
 
@@ -30,6 +29,29 @@
           ghcmd "$act" "$@"
           ;;
       esac
+    }
+
+    function gh-smart-clone() {
+        if [[ -z "$1" ]]; then
+            echo "错误: 请输入 repo 或 owner/repo"
+            return 1
+        fi
+
+        local target="$1"
+        shift
+
+        # 正则表达式解释：
+        # ^[a-zA-Z0-9._-]+$  -> 纯仓库名格式（不包含斜杠 /）
+        # ^[^/]+/[^/]+$      -> 标准的 owner/repo 格式（包含且仅包含一个斜杠 /）
+
+        if [[ "$target" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+            # 间接调用 gh-user 函数，享受多级缓存带来的丝滑速度
+            local owner
+            owner=$(gh-user) || return 1
+            echo "# detected gh owner: $owner"
+            target="$owner/$target"
+        fi
+        ghcmd repo clone "$target" "$@"
     }
 
     function gh-user() {
@@ -76,32 +98,6 @@
         fi
     }
 
-    function gh-smart-clone() {
-        # 确保传入了参数
-        if [[ -z "$1" ]]; then
-            echo "错误: 请输入仓库名称或 owner/repo"
-            return 1
-        fi
-
-        local target="$1"
-
-        # 正则表达式解释：
-        # ^[a-zA-Z0-9._-]+$  -> 纯仓库名格式（不包含斜杠 /）
-        # ^[^/]+/[^/]+$      -> 标准的 owner/repo 格式（包含且仅包含一个斜杠 /）
-
-        if [[ "$target" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-            # 如果是纯 slink 格式，自动补全 owner
-            echo "检测到 slink 格式，自动转换为: cao7113/$target"
-            ghcmd repo clone "$(gh-user)/$target"
-        elif [[ "$target" =~ ^[^/]+/[^/]+$ ]]; then
-            # 如果已经是 owner/repo 格式，保持原样
-            echo "检测到 owner/repo 格式，保持原样: $target"
-            ghcmd repo clone "$target"
-        else
-            # 其他格式（例如完整的 URL：https://github.com/...），直接透传给 gh
-            ghcmd repo clone "$target"
-        fi
-    }
   '';
 
   # gh auth login

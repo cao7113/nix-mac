@@ -21,6 +21,7 @@ in
 
   # 2. 替代激活脚本：将检测和 source 逻辑直接写入 Zsh 的启动配置文件中
   programs.zsh.initContent = lib.mkAfter ''
+    ## dot-sec helpers
     export dot_sec_home="${secPath}"
 
     if [ -f "${secZshFile}" ]; then
