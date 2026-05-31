@@ -50,7 +50,8 @@
         # try Brave https://alternativeto.net/browse/all/?tag=web-browser
         "google-chrome"
 
-        "visual-studio-code"
+        #"zed"
+        # "visual-studio-code"
         "notion"
 
         # AI app

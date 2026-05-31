@@ -117,11 +117,10 @@ export https_proxy=http://127.0.0.1:1087
 
 ## References
 
-- https://callistaenterprise.se/blogg/teknik/2025/05/28/nix-darwin/
-- https://github.com/HestHub/nixos
+- https://github.com/nix-community/home-manager
+- https://home-manager-options.extranix.com/?query=direnv&release=release-25.11
 - https://github.com/nix-darwin/nix-darwin
 - https://nix-darwin.github.io/nix-darwin/manual/index.html
-- https://home-manager-options.extranix.com/?query=direnv&release=release-25.11
+- https://callistaenterprise.se/blogg/teknik/2025/05/28/nix-darwin/
+- https://github.com/HestHub/nixos
 - https://nix.dev/manual/nix/2.28/introduction.html
-- https://github.com/NixOS/flake-registry/blob/master/flake-registry.json
-- https://nix.dev/manual/nix/2.28/command-ref/new-cli/nix3-flake.html#examples

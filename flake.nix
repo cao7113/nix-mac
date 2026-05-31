@@ -7,7 +7,7 @@
     # Determinate 3.* module
     determinate = {
       # url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
-      url = "github:DeterminateSystems/determinate/v3.17.1";
+      url = "github:DeterminateSystems/determinate/v3.21.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -15,19 +15,19 @@
     # Stable Nixpkgs (use 0.1 for unstable)
     # nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0";
     # nixpkgs.url = "github:nixos/nixpkgs/nixos-unstabl
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-25.11-darwin";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-26.05-darwin";
 
     # https://github.com/nix-darwin/nix-darwin/tree/nix-darwin-25.11
     nix-darwin = {
       # Stable nix-darwin (use 0.1 for unstable)
       # url = "https://flakehub.com/f/nix-darwin/nix-darwin/0";
-      url = "github:nix-darwin/nix-darwin/nix-darwin-25.11";
+      url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # https://github.com/nix-community/home-manager/tree/release-25.11
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

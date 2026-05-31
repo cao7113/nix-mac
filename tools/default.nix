@@ -12,6 +12,6 @@
     db/pg/default.nix
     cloud/flyio/default.nix
     mise/default.nix
-    # ./vscode.nix
+    editors/vscode.nix
   ];
 }

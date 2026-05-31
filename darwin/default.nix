@@ -10,7 +10,8 @@
   # https://nix-darwin.github.io/nix-darwin/manual/index.html
 
   # Used for backwards compatibility, please read the changelog before changing.
-  system.stateVersion = 6;
+  # system.stateVersion = 6;
+   system.stateVersion = 7; # for 26.05
 
   system.primaryUser = username;
 
@@ -31,8 +32,6 @@
   networking.computerName = "Ryn's Mac";
   # 2. 这里的设置确保系统偏好设置中的名字也随之同步
   system.defaults.smb.NetBIOSName = "mac";
-
-  nixpkgs.config.allowUnfree = true;
 
   imports = [
     determinate/default.nix

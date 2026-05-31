@@ -1,5 +1,7 @@
 # Homebrew
 
+Brew 装壳，Nix 装灵魂（配置/插件）
+
 ## Mirros
 
 ```

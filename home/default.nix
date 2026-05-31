@@ -24,7 +24,7 @@
     # You should not change this value, even if you update Home Manager. If you do
     # want to update the value, then make sure to first check the Home Manager
     # release notes.
-    home.stateVersion = "25.11";
+    home.stateVersion = "26.05";
 
     # 启用 Home Manager 自己管理自己
     programs.home-manager.enable = true;

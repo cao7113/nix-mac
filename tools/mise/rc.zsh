@@ -1,5 +1,4 @@
-alias misecmd="command mise"
-
+# Notice: mise alreay is a shell-functon and command, so here we named it m
 function m(){
   local act=$1
 
@@ -7,16 +6,17 @@ function m(){
 
   case $act in 
     rg)
-      misecmd registry "$@"
+      mise registry "$@"
       ;;
     remote)
-      misecmd ls-remote "$@"
+      mise ls-remote "$@"
       ;;
-    trust|ok|allow)
-      misecmd trust "$@"
+    a|allow)
+      # follow direnv rules
+      mise trust "$@"
       ;;
     *) 
-      misecmd $act "$@" 
+      mise $act "$@" 
       ;;
   esac
 }
