@@ -1,19 +1,17 @@
 # see all aliases with `alias`
 # NOTE: this file loaded before checkout profile, maybe overwrite
-# keep this simple and mini
-
-## dsh
-alias d="dsh" # override d function from omz https://github.com/ohmyzsh/ohmyzsh/blob/master/lib/directories.zsh
+# - keep this simple and MINI!
 
 alias e="exit"
 alias l="ls -lah"
 alias cmd="command"
 alias has="type -a"
-alias what="whence -a" # which -a
+alias what="which -a" # whence -a
 alias fun="whence -f" # functions xxx
 alias opts="getopt"
 
-#alias c="clear" # use Ctrl+l instead
+# alias c="clear" # use Ctrl+l instead
+
 # r # builtin r for repeat, Great!!! 
 # r git
 # dirs -v
