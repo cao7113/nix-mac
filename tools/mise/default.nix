@@ -4,51 +4,40 @@
   lib,
   username,
   inputs,
+  repo_path,
   ...
 }:
-
 {
-  home-manager.users.${username} = {
-    programs.mise = {
-      enable = true;
+  # mise 更新较快，直接使用brew版本
+  homebrew = {
+    enable = true;
+    onActivation.cleanup = "zap"; # 自动清理未在配置中声明的物理 Homebrew 包
 
-      # 启用全局设置，mise 会自动 hook 到你的 shell (zsh/bash/fish)
-      # trigger: eval "$(mise init zsh)" # For zsh
-      enableZshIntegration = true;
-      # enableBashIntegration = true;
-
-      # 工业级配置：直接在 Nix 中声明全局默认版本
-      globalConfig = {
-        # mise install
-        tools = {
-          usage = "latest"; # 增强 mise 的自动补全功能
-          fnox = "latest";
-          erlang = "latest";
-          elixir = "latest";
-          # node = "20";
-          # python = "3.11";
-          # go = "latest";
-          # fnox = "latest"
-          # bitwarden = "latest"
-        };
-
-        # https://mise.jdx.dev/configuration/settings.html
-        settings = {
-          experimental = true; # 开启实验性功能（如更强的环境变量管理）
-          status.show_env = true;
-          # verbose = true; # 输出更详细的日志，方便调试和了解 mise 的内部工作原理
-        };
-      };
-    };
-
-    # 运行 mise settings 确认 shims 相关设置为 false，这能保证你在 VS Code 等 IDE 中调用编译器时，获得与终端完全一致的路径响应，且没有任何性能损耗
-
-    # programs.zsh.initContent = ''
-    #   # 确保 Nix 的 bin 路径在最前面，防止被 mise 误覆盖系统关键工具
-    #   # export PATH="$HOME/.nix-profile/bin:/run/current-system/sw/bin:$PATH"
-
-    #   # Trust them with `mise trust`. See https://mise.jdx.dev/cli/trust.html for more information.
-    #   # mise ERROR Run with --verbose or MISE_VERBOSE=1 for more information
-    # '';
+    brews = [
+      "mise"
+    ];
   };
+
+  # 💡 注意这里的修改：后面加了 = { config, ... }:
+  # 这会创建一个局部作用域，这里的 config 变成了 home-manager 专属的 config
+  home-manager.users.${username} =
+    { config, ... }:
+    {
+      # todo pass repo_path
+      home.file.".config/mise/config.toml".source =
+        config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/${repo_path}/tools/mise/config.toml";
+
+      # home.file.".config/mise/config.toml".text = ''
+      #   copy config.toml content here, but it will be hard to maintain, so use source instead
+      # '';
+
+      # 手动将 mise 钩子注入到 Zsh 中（替代原本的 enableZshIntegration）
+      programs.zsh.initContent = lib.mkAfter ''
+        # 注入 Homebrew 安装的 mise 钩子
+        echo "# Running: mise homebrew hook..."
+        if command -v mise &> /dev/null; then
+          eval "$(mise activate zsh)"
+        fi
+      '';
+    };
 }

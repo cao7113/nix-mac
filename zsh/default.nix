@@ -3,6 +3,7 @@
   pkgs,
   lib,
   username,
+  repo_path,
   ...
 }:
 {
@@ -66,7 +67,7 @@
         zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/zcompcache"
 
 
-        export nix_mac_home="${config.home.homeDirectory}/dev/nix-mac"
+        export nix_mac_home="${config.home.homeDirectory}/${repo_path}";
         # zsh helpers from nix-mac
         source "$nix_mac_home/main.zsh"
       ''

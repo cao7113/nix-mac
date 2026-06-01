@@ -44,10 +44,11 @@
 
       # GUI 软件通常放在 casks
       casks = [
-        # basics
+        # Basics
         "iterm2"
 
-        # try Brave https://alternativeto.net/browse/all/?tag=web-browser
+        # Browsers
+        # Brave https://alternativeto.net/browse/all/?tag=web-browser
         "google-chrome"
 
         #"zed"
@@ -83,7 +84,7 @@
     };
 
     home-manager.users.${username} = {
-      programs.zsh.initContent = ''
+      programs.zsh.initContent = lib.mkBefore ''
         echo "Initializing Homebrew environment for ${username}..."
         # 让 Homebrew 的环境变量生效 (如果你通过 Homebrew 安装了某些工具，这一步很重要)
         if [[ -e /opt/homebrew/bin/brew ]]; then

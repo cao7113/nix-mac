@@ -1,6 +1,5 @@
 # Google Chrome
 
-
 * nix能安装google-chrome 插件吗，如bitwarden(不能，可使用Brave)
     - 登陆Google账号后，插件自动同步了，很好！
     - 书签也同步了，🎉！

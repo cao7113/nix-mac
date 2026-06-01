@@ -73,6 +73,8 @@
       # Your system type (Apple Silicon)
       system = "aarch64-darwin";
 
+      repo_path = "dev/nix-mac";
+
       # pkgs = inputs.nixpkgs.legacyPackages.${system};
 
       # test auto completion todo
@@ -99,6 +101,7 @@
             username
             hostname
             system
+            repo_path
             ;
         };
 
@@ -110,17 +113,17 @@
             # 隔离性：nix-darwin 和 home-manager 是两个独立的系统。你传给 darwinSystem 的参数，默认只在 nix-darwin 的配置项里有效。
             # 隧道效应：当你进入 home-manager.users.${username} 内部时，它开启了一个新的作用域。
             # 如果你不写 extraSpecialArgs，_home.nix 就拿不到外界的 username 变量。
-            home-manager.extraSpecialArgs = { inherit username inputs; };
+            home-manager.extraSpecialArgs = { inherit username repo_path inputs; };
           }
 
           ## import modules
           ./darwin
-          ./home
-          ./brew
           {
             # uncomment below if brew is not needed, it will speed up the evaluation especially init-setup!!!
             # config.brewer.brew.enable = false;
           }
+          ./brew
+          ./home
           ./tools
         ];
       };

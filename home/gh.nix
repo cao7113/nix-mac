@@ -6,6 +6,7 @@
   ...
 }:
 {
+
   # gh: GitHub CLI https://cli.github.com/
   programs.zsh.initContent = ''
     alias ghcmd="command gh" 
@@ -23,6 +24,11 @@
           ;;
         remote)
           gh-set-remote "$@"
+          ;;
+        sec)
+          echo "# Should manually run"
+          echo gh secret set XXX
+          echo gh secret ls
           ;;
         *)
           # 其他 gh 子命令正常调用

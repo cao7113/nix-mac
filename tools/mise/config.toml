@@ -1,0 +1,13 @@
+# mise global config
+[tools]
+usage = "latest"
+fnox = "latest"
+erlang = "latest"
+elixir = "latest"
+
+[settings]
+experimental = true
+status.show_env = true
+# 开启这两项，当检测到本地没有对应版本的工具时，mise 会在后台或启动时自动下载
+asdf_compat = true
+# install_missing = true
