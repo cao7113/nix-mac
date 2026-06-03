@@ -4,6 +4,7 @@ usage = "latest"
 fnox = "latest"
 erlang = "latest"
 elixir = "latest"
+bun = "1.3.14"
 
 [settings]
 experimental = true
