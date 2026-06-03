@@ -51,10 +51,7 @@
     initContent = lib.mkMerge [
       # # 使用 mkBefore 确保这段代码位于 .zshrc 的最顶端
       # (lib.mkBefore ''
-      #   # 它是 Powerlevel10k 的 Instant Prompt 功能，用于实现终端“秒开”
-      #   if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${USER}.zsh" ]]; then
-      #     source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${USER}.zsh"
-      #   fi
+      #   # shell at ~/.zshrc top
       # '')
 
       ''
@@ -65,7 +62,6 @@
         # 启用补全缓存
         zstyle ':completion:*' use-cache yes
         zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/zcompcache"
-
 
         export nix_mac_home="${config.home.homeDirectory}/${repo_path}";
         # zsh helpers from nix-mac
