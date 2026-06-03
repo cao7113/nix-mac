@@ -15,7 +15,7 @@
     # ".screenrc".source = dotfiles/screenrc;
 
     # dotfiles
-    ".testrc".source = ./dotfiles/testrc;
+    # ".testrc".source = ./testrc;
 
     # # You can also set the file content immediately.
     # ".gradle/gradle.properties".text = ''

@@ -29,10 +29,12 @@
     #   echo "Hello, ${config.home.username}!"
     # '')
 
-    # neovim
-
     ## nix tools
     nixd
     nixfmt
+
+    # shell tools
+    shfmt # 格式化工具
+    shellcheck # 顺便把上面推荐的语法检查也装上，绝配
   ];
 }

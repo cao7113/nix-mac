@@ -6,16 +6,9 @@
   ...
 }:
 {
-  # # Online editors
-  # - https://vscode.dev/
-  #     - 会打开并编辑本地文件，很方便！免除安装！
-  # - https://github.dev/cao7113/nix-mac
-  #     - 在线编辑仓库，很棒
-  # - github repo change into vscode-mode by enter `.` when browsing code!!!
-  #     - [Visual Studio Code can run as an editor in the browser. ](https://code.visualstudio.com/api/extension-guides/web-extensions)
-
+  # Cmd + Shift + P -> Open command palette
   # 使用homebrew安装vscode，与Spotlight结合很好
-  # 关联github账号并使用Setting Sync同步
+  # 关联github账号并使用Setting Sync同步，可报错对应的profiles设置？
   homebrew = {
     enable = true;
     onActivation.cleanup = "zap"; # 自动清理未在配置中声明的物理 Homebrew 包

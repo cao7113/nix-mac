@@ -140,7 +140,6 @@
   };
 
   home.shellAliases = {
-    og = "gh browse"; # 快速打开当前仓库的 GitHub 页面
     gist = "gh gist"; # 直接使用 gh 创建和管理 gists
   };
 
