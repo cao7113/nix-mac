@@ -292,10 +292,10 @@ dklogin(){
 }
 
 # daocloud.io
-daocloudlogin(){
-  [ $# -lt 1 ] && echo require password && return 1
-  echo $1 | docker login -u cao7113 --password-stdin f1361db2.m.daocloud.io
-}
+# daocloudlogin(){
+#   [ $# -lt 1 ] && echo require password && return 1
+#   echo $1 | docker login -u cao7113 --password-stdin f1361db2.m.daocloud.io
+# }
 
 return 0
 

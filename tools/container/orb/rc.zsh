@@ -1,25 +1,33 @@
-alias oc="orbctl"
-alias orbcmd="command orb"
-function orb(){
-  local act=$1
-  
-  local this_script="${(%):-%x}"
-  local this_dir=${this_script:h}
+# orbstack rc helper
 
-  case $act in
-    cd)
-      cd $this_dir
-      ;;
-    home)
-      echo $this_dir
-      ;;
-    l|ls|m|machine)
-      orb list
-      ;;
-    *)
-      orbcmd "$@"
-      ;;
-  esac
+# alias oc="orbctl"
+alias orbcmd="command orb"
+
+function orb() {
+	local act=$1
+	(( $# > 0 )) && shift
+
+	local this_script="${(%):-%x}"
+	local this_dir=${this_script:A:h}
+
+	case $act in
+	j|cd)
+		cd $this_dir
+		;;
+	home)
+		echo $this_dir
+		;;
+	l|ls|m|machine)
+		orbcmd list
+		;;
+	dk.log)
+		# 实时查看 orbstack 中关于 docker 引擎的日志(OrbStack 深度集成了系统日志)
+		orbcmd logs docker
+		;;
+	*)
+		orbcmd "$act" "$@"
+		;;
+	esac
 }
 
 # orb proxy

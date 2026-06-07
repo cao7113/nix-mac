@@ -6,7 +6,6 @@
   ...
 }:
 {
-
   # 使用系统级的 nixpkgs 实例
   home-manager.useGlobalPkgs = true;
   # installed to /etc/profiles/per-user/$USERNAME if below true

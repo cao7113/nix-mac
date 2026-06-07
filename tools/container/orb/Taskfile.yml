@@ -11,17 +11,19 @@ tasks:
   ## Containers
 
   hi: open http://localhost
-  hi.run: docker run -p 80:80 docker/getting-started
+  hi.run: |
+    # docker run -p 80:80 docker/getting-started
+    docker run -it -p 80:80 docker/getting-started
+
   # orb config docker
   # orb logs docker
 
-  ## Machines
+  ## Orb Machines
 
   m: |
-    # get default machine
-    orb default
-    # set default machine
-    # orb default ubox1
+    orb default           # get current default machine
+    # orb default ubox1   # set current default machine
+    orb ls
 
   ## ubuntu
   ubox.ops: |
@@ -45,6 +47,19 @@ tasks:
   abox: |
     orb create alpine:3.19 --arch amd64 {{.abox_name}}
 
+
+  ## Network debug
+  # orb config docker # ~/.orbstack/config/docker.json 
+  # orb restart docker
+  # {
+  #   "debug": true,
+  #   "experimental": true
+  # }
+
+  # 自动使用系统的代理配置 https://docs.orbstack.dev/docker/network#proxies
+  # orb config get network_proxy # auto
+  # orb config set network_proxy http://host.orb.internal:1087 # 会将Network Proxy切换到Custom模式
+
   ## Setup
   conf: orb config show
   
@@ -62,9 +77,7 @@ tasks:
     ln -snf ~/.ssh _local/_ssh
     ln -snf ~/.orbstack/ssh _local/orb-ssh
 
-  v: |
-    $(brew --prefix)/bin/orb version
-    # brew info --cask orbstack
+  v: orb version
   setup: |
     brew install orbstack
   up: |

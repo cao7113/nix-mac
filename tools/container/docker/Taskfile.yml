@@ -13,6 +13,9 @@ tasks:
   pl-bb: docker pull {{.ub_base}}
   pl-ub: docker pull {{.bb_base}}
 
+  pg: |
+    docker pull postgres:18
+
   ## Tools
   # https://hub.docker.com/r/curlimages/curl
   get-curl-img: |
@@ -27,12 +30,10 @@ tasks:
         docker run -d ubuntu:22.04 \
         bash -c "shuf -i 1-10000 -n 1 -o /data.txt && tail -f /dev/null"
 
-  version:
-    cmds:
-      # docker --version
-      - docker version
-      # - docker info
+  version: |
+    # docker --version
+    - docker version
+    # - docker info
 
-  k8s-tools:
-    cmds:
-      - brew install kubectx
+  k8s-tools: |
+    brew install kubectx
