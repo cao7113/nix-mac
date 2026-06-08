@@ -34,9 +34,10 @@
 
       # 1. 优先使用国内镜像站
       substituters = [
-        "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
+        # "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
         "https://cache.nixos.org"
-        "https://cache.flakehub.com" # 3. Flakehub 专用缓存（国内无镜像，需直连）
+        # Flakehub 专用缓存（国内无镜像，需直连）
+        "https://cache.flakehub.com"
       ];
       # 2. 这里的公钥必须保留，否则镜像站的包无法通过校验
       trusted-public-keys = [

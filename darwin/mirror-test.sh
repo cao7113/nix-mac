@@ -1,5 +1,7 @@
 #!/usr/bin/env zsh
 
+# curl -I https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store/nix-cache-info
+
 # 镜像站配置
 typeset -A mirrors
 mirrors=(

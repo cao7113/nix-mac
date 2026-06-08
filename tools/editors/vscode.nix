@@ -7,8 +7,8 @@
 }:
 {
   # Cmd + Shift + P -> Open command palette
-  # 使用homebrew安装vscode，与Spotlight结合很好
-  # 关联github账号并使用Setting Sync同步，可报错对应的profiles设置？
+  # 使用homebrew安装vscode，与Spotlight配合很好
+  # 关联github账号并使用Setting Sync同步，可保存对应的profiles设置
   homebrew = {
     enable = true;
     onActivation.cleanup = "zap"; # 自动清理未在配置中声明的物理 Homebrew 包
