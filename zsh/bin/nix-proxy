@@ -1,0 +1,102 @@
+#!/usr/bin/env zsh
+
+# Nix 代理管理工具 (Determinate Installer 专用 - 终极稳定性修复版)
+PLIST_PATH="/Library/LaunchDaemons/systems.determinate.nix-daemon.plist"
+SERVICE_NAME="system/systems.determinate.nix-daemon"
+CMD=$1
+PROXY_URL=${2:-"http://127.0.0.1:1087"}
+
+# 1. 权限检查
+if [[ "$EUID" -ne 0 ]]; then
+	echo "❌ 错误: 该操作需要修改系统服务，请在命令前加上 sudo !"
+	echo "👉 示例: sudo nix-proxy ${CMD:-set}"
+	exit 1
+fi
+
+# 2. 文件存在检查
+if [[ ! -f "$PLIST_PATH" ]]; then
+	echo "❌ 错误: 未找到 Determinate Nix 的配置文件: $PLIST_PATH"
+	exit 1
+fi
+
+# 内部函数：重启 nix-daemon 服务
+_restart_nix_service() {
+	echo "🔄 正在通知 launchd 重启 Determinate Nix 守护进程..."
+
+	if launchctl kickstart -k "$SERVICE_NAME" &>/dev/null; then
+		echo "✅ Nix 服务已成功重启并载入新配置！"
+	else
+		echo "⚠️ kickstart 响应超时，正在尝试通过 bootstrap 强制重载服务..."
+		launchctl bootout system "$PLIST_PATH" &>/dev/null
+		sleep 0.5
+		launchctl bootstrap system "$PLIST_PATH" &>/dev/null
+		echo "✅ Nix 服务已重新强行加载！"
+	fi
+}
+
+# 3. 核心路由分支
+case "$CMD" in
+set)
+	echo "🚀 正在为 Nix 写入代理配置: $PROXY_URL"
+
+	# 如果基础 EnvironmentVariables 字典节点不存在，则创建
+	if ! plutil -extract EnvironmentVariables xml1 -o - "$PLIST_PATH" &>/dev/null; then
+		plutil -insert EnvironmentVariables -dict "$PLIST_PATH"
+	fi
+
+	# 先清除可能存在的冲突键
+	plutil -remove EnvironmentVariables.http_proxy "$PLIST_PATH" &>/dev/null
+	plutil -remove EnvironmentVariables.https_proxy "$PLIST_PATH" &>/dev/null
+
+	# 绝对干净状态下执行硬插入，绕过 macOS 版本的 plutil -replace 缺陷
+	plutil -insert EnvironmentVariables.http_proxy -string "$PROXY_URL" "$PLIST_PATH"
+	plutil -insert EnvironmentVariables.https_proxy -string "$PROXY_URL" "$PLIST_PATH"
+
+	echo "✅ 代理写入成功。"
+	_restart_nix_service
+	;;
+
+show)
+	echo "🔍 正在读取 $PLIST_PATH 中的代理环境..."
+	HAS_PROXY=0
+
+	if plutil -extract EnvironmentVariables.http_proxy json -o - "$PLIST_PATH" &>/dev/null; then
+		echo "http_proxy  -> $(plutil -extract EnvironmentVariables.http_proxy json -o - "$PLIST_PATH" | tr -d '"')"
+		HAS_PROXY=1
+	fi
+	if plutil -extract EnvironmentVariables.https_proxy json -o - "$PLIST_PATH" &>/dev/null; then
+		echo "https_proxy -> $(plutil -extract EnvironmentVariables.https_proxy json -o - "$PLIST_PATH" | tr -d '"')"
+		HAS_PROXY=1
+	fi
+
+	if [[ $HAS_PROXY -eq 0 ]]; then
+		echo "ℹ️ 当前未检测到任何代理配置（Nix 处于直连模式）。"
+	fi
+	;;
+
+unset)
+	echo "🗑️ 正在从服务中擦除代理设置..."
+
+	# 精准删除代理键，安全保留原文件内官方默认的其他环境变量
+	plutil -remove EnvironmentVariables.http_proxy "$PLIST_PATH" &>/dev/null
+	plutil -remove EnvironmentVariables.https_proxy "$PLIST_PATH" &>/dev/null
+
+	echo "✅ 代理配置已清除。"
+	_restart_nix_service
+	;;
+
+*)
+	echo "================================================="
+	echo "💡 Nix 代理一键控制工具 (Determinate 终极版)"
+	echo "================================================="
+	echo "使用指令:"
+	echo "  sudo nix-proxy set [URL]   - 设置代理 (默认: http://127.0.0.1:1087)"
+	echo "  sudo nix-proxy show        - 查看当前服务内生效的代理"
+	echo "  sudo nix-proxy unset       - 清除代理，恢复直连"
+	echo ""
+	echo "快捷示例:"
+	echo "  sudo nix-proxy set"
+	echo "  sudo nix-proxy set socks5h://127.0.0.1:1086"
+	echo "================================================="
+	;;
+esac

@@ -55,8 +55,6 @@
 
   };
 
-  # todo write proxy Switch shell command
-
   # 注入代理环境变量到 nix-daemon 进程
   # 这会影响所有 build 过程中的 fetcher（如 fetchgit, fetchurl）
   # 注意：这需要较新版本的 nix-darwin 模块支持

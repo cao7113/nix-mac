@@ -113,6 +113,8 @@ function nix-mac-home-manager() {
 
 # nix_mac_home exported by zsh/default.nix
 DSH_PROFILE_ID="dummy" source "$nix_mac_home/zsh/main.zsh"
+source $nix_mac_home/nix/main.zsh
+source $nix_mac_home/darwin/main.zsh
 source $nix_mac_home/tools/main.zsh
 # todo put other place
 source $nix_mac_home/home/git.zsh

@@ -1,6 +1,4 @@
-# Determinate
-
-## Determinate Nix
+# Determinate Nix
 
 - https://docs.determinate.systems/determinate-nix/
 - https://manual.determinate.systems/introduction.html
@@ -9,6 +7,16 @@ Determinate Nix has two core components:
 
 - Our downstream distribution of the Nix CLI.
 - Determinate Nixd, a daemon that makes your experience of installing and using Nix dramatically more smooth.
+
+## Nix Daemon
+
+- https://gemini.google.com/app/1c3408a9542c3b2c
+
+Determinate Installer 安装 Nix 后，`systems.determinate.nix-daemon.plist`负责后台处理所有构建、下载和包管理的程序是 nix-daemon。
+
+```
+/Library/LaunchDaemons/systems.determinate.nix-daemon.plist
+```
 
 ## Path
 
@@ -26,4 +34,3 @@ Determinate Nix has two core components:
 而 https://github.com/DeterminateSystems/determinate/blob/main/flake.nix#L50
 的packages.default并没有指向 fh啊，这是怎么回事呢？
 
-- use nix-darwin

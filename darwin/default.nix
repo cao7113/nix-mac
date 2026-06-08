@@ -11,7 +11,7 @@
 
   # Used for backwards compatibility, please read the changelog before changing.
   # system.stateVersion = 6;
-   system.stateVersion = 7; # for 26.05
+  system.stateVersion = 7; # for 26.05
 
   system.primaryUser = username;
 
@@ -34,7 +34,6 @@
   system.defaults.smb.NetBIOSName = "mac";
 
   imports = [
-    determinate/default.nix
     ./defaults.nix
     ./pkgs.nix
     # launchd/test.nix
