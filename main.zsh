@@ -165,6 +165,9 @@ function nix() {
 		echo "this_script=$this_script"
 		echo "this_dir=$this_dir"
 		;;
+	log)
+		tail -n 100 -f /var/log/determinate-nix-daemon.log
+		;;
 	lab)
 		cd $this_dir/lab/"$@"
 		;;

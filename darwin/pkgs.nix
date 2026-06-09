@@ -12,8 +12,9 @@
     htop
     tree
     jq
-    yq-go # 另一个 yq 实现，性能更好，功能更丰富，但语法略有不同
-    # yq # jq 的 yaml 版本, python 实现，性能一般，但语法和 jq 一致
+    # 现代的 yq (Mike Farah 版本) https://github.com/mikefarah/yq，自己的语法不兼容jq
+    yq-go # 另一个 yq 实现，性能更好，功能更丰富，但语法略有不同，更流行，优选
+    # yq # jq 的 python 版本，性能一般，但语法和 jq 一致 https://github.com/kislyuk/yq
     fzf
     fd # 现代查找工具：用 Rust 编写，速度远超 find，默认忽略 .git
     ripgrep # 极速搜索工具：用于 frg 函数中的文本内容检索
