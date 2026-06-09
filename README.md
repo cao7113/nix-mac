@@ -31,6 +31,8 @@ Recommended: use the Determinate Nix Installer:
 
 ```bash
 curl -fsSL https://install.determinate.systems/nix | sh -s -- install
+
+## need auth login???
 ```
 
 For the pkg installer, see:

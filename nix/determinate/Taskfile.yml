@@ -78,7 +78,6 @@ tasks:
     determinate-nixd login
     # determinate-nixd auth logout
 
-
   ## Nix environment setup
 
   version: determinate-nixd version
@@ -136,8 +135,8 @@ tasks:
     # uninstall darwin as below
     # `nix-darwin` installation detected, it must be removed before uninstalling Nix. 
     # Please refer to https://github.com/LnL7/nix-darwin#uninstalling for instructions how to uninstall `nix-darwin`.
-
     # ... clear all /nix/ and restore raw config
+    # sudo darwin-uninstaller
   
   ## nix-darwin win determinate
   # https://flakehub.com/f/DeterminateSystems/determinate

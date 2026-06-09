@@ -88,8 +88,22 @@ function mac-daemon() {
 	ls)
 		sudo launchctl list
 		;;
+	files)
+		(
+			set -x
+			ls -l /Library/LaunchDaemons # /System/Library/LaunchDaemons
+		)
+		;;
 	print)
 		sudo launchctl print system
+		;;
+	st | status)
+		# com.qiuyuzhou.shadowsocksX-NG.local
+		(($# == 0)) && {
+			echo "Require job label"
+			return 1
+		}
+		sudo launchctl print gui/$(id -u)/$1 | grep -E "state =|pid =|last exit status ="
 		;;
 	up | load)
 		# 针对系统全局（Daemon，需 sudo）
@@ -98,10 +112,14 @@ function mac-daemon() {
 	down | unload)
 		sudo launchctl bootout system "$@" # /Library/LaunchDaemons/com.system.task.plist
 		;;
+	reup)
+		(($# == 0)) && {
+			echo "Require job label"
+			return 1
+		}
+		sudo launchctl kickstart -k gui/$(id -u)/"$1"
+		;;
 	paths | dirs)
-		set -x
-		ls -l /Library/LaunchDaemons # /System/Library/LaunchDaemons
-		set +x
 		echo "/Library/LaunchDaemons 				# 第三方软件安装"
 		echo "/System/Library/LaunchDaemons	# 系统自带"
 		;;
