@@ -20,17 +20,20 @@ error:
 sudo http_proxy=$http_proxy https_proxy=$https_proxy nix run "nix-darwin/nix-darwin-26.05#darwin-rebuild" -- switch --flake ".#mac" --show-trace --impure
 
 
-分两步
-先下载（使用当前proxy环境变量）
+首次分两步安装nix-mac项目
+先下载（使用当前用户的proxy环境变量）
 nix build ".#darwinConfigurations.mac.system" --no-link 
-后激活
 nix build ".#darwinConfigurations.mac.system" 
 因为你之前已经把东西都下好了，这一步会瞬间（0秒）完成。它唯一做的事情是在你当前目录下生成一个名为 result 的软链接，这个软链接直接指向你在 Store 里的全新系统闭包。
-sudo darwin-rebuild switch --flake ".#mac" --impure
-就可以
-sudop darwin-rebuild switch --flake ".#mac" --show-trace --impure
+后激活
+sudo ./result/activate
 
-sudop nix run "nix-darwin/nix-darwin-26.05#darwin-rebuild" -- switch --flake ".#mac" --show-trace --impure
+之后日常修改可直接运行（内部需要时会调用sudo）
+darwin-rebuild switch --flake ".#mac" --show-trace --impure
+
+sudo nix run github:nix-darwin/nix-darwin/nix-darwin-26.05#darwin-rebuild -- switch --flake .#Ryns-Mac
+sudo nix run "nix-darwin/nix-darwin-26.05#darwin-rebuild" -- switch --flake ".#mac" --show-trace --impure
+
 sudop nix --extra-experimental-features nix-command --extra-experimental-features flakes run "nix-darwin/nix-darwin-26.05#darwin-rebuild" -- switch --flake ".#mac" --show-trace --impure
 
 
