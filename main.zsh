@@ -2,6 +2,7 @@ alias mac=nix-mac
 alias mup="mac up"
 alias iup="mac iup"
 alias machm=nix-mac-home-manager
+alias np="nix-profile"
 
 function nix-mac() {
 	local act=$1
@@ -112,12 +113,35 @@ function nix-mac-home-manager() {
 }
 
 # nix_mac_home exported by zsh/default.nix
+if [[ -z "$nix_mac_home" ]]; then
+  export nix_mac_home=$(nix-mac home)
+fi
+
 DSH_PROFILE_ID="dummy" source "$nix_mac_home/zsh/main.zsh"
 source $nix_mac_home/nix/main.zsh
 source $nix_mac_home/darwin/main.zsh
 source $nix_mac_home/tools/main.zsh
 # todo put other place
 source $nix_mac_home/home/git.zsh
+
+dot_sec_home=~/.sec
+if [[ -d $dot_sec_home ]]; then
+	export dot_sec_home
+
+	sec_main_rc="$dot_sec_home/main.zsh"
+	  if [[ -f "$sec_main_rc" ]]; then
+      source "$sec_main_rc"
+    else
+      # 仅在交互式终端中提示，避免污染非交互脚本
+      if [[ $- == *i* ]]; then
+        printf "\033[0;33m提示: 未检测到私密配置 (${sec_main_rc})\033[0m\n"
+      fi
+    fi
+fi
+
+# 允许 # 出现
+setopt interactive_comments
+
 
 ## Nix helpers
 
@@ -165,14 +189,22 @@ function nix() {
 		echo "this_script=$this_script"
 		echo "this_dir=$this_dir"
 		;;
-	log)
-		tail -n 100 -f /var/log/determinate-nix-daemon.log
+	# log)
+	# 	# tail -n 100 -f /var/log/determinate-nix-daemon.log
+	# 	# tail -n 100 -f /var/log/nix.log
+	# 	;;
+	
+	ps)
+		sudo launchctl list | grep nix
 		;;
 	lab)
 		cd $this_dir/lab/"$@"
 		;;
 	d | dev)
 		nixcmd develop "$@"
+		;;
+	dm)
+		nix-daemon "$@"
 		;;
 	sh)
 		# noglob to escape #
@@ -288,6 +320,34 @@ function nix-registry() {
 		;;
 	*)
 		nixrgcmd $act "$@"
+		;;
+	esac
+}
+
+function nix-daemon() {
+	local act=$1
+	(($# > 0)) && shift
+
+  local plist_file=/Library/LaunchDaemons/org.nixos.nix-daemon.plist
+	case $act in
+	cat)
+		cat $plist_file
+		;;
+	st)
+		sudo launchctl list|grep nix
+		;;
+	reup)
+		sudo launchctl kickstart -k system/org.nixos.nix-daemon
+		;;
+	log)
+		tail -n 100 -f /var/log/nix-daemon.log
+		;;
+	log-reset)
+		# sudo echo "# manual hard reset" > /var/log/nix-daemon.log
+		sudo tee /var/log/nix-daemon.log < /dev/null
+		;;
+	*)
+		ls -l $plist_file
 		;;
 	esac
 }

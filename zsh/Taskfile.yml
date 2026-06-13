@@ -30,7 +30,8 @@ tasks:
   doc: |
     mkdir -p doc
     cd doc
-
+    
+    # 可用来查看command等的帮助信息
     man zshbuiltins | col -b > zshbuiltins.txt
   
   ## Setup

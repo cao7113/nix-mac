@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+# my_array=(苹果 变色龙 香蕉); echo $my_array[2] # 变色龙 # 1-based
+
 # $commands[git]
 # 前缀 +：存在性开关
 # ${+commands[git]}

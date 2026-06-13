@@ -103,21 +103,20 @@ function mac-daemon() {
 			echo "Require job label"
 			return 1
 		}
-		sudo launchctl print gui/$(id -u)/$1 | grep -E "state =|pid =|last exit status ="
+		sudo launchctl print system $1 | grep -E "state =|pid =|last exit status ="
 		;;
 	up | load)
-		# 针对系统全局（Daemon，需 sudo）
-		sudo launchctl bootstrap system "$@" # /Library/LaunchDaemons/com.system.task.plist
+		sudo launchctl bootstrap system/"$@" # /Library/LaunchDaemons/com.system.task.plist
 		;;
 	down | unload)
-		sudo launchctl bootout system "$@" # /Library/LaunchDaemons/com.system.task.plist
+		sudo launchctl bootout system/"$@" # /Library/LaunchDaemons/com.system.task.plist
 		;;
 	reup)
 		(($# == 0)) && {
 			echo "Require job label"
 			return 1
 		}
-		sudo launchctl kickstart -k gui/$(id -u)/"$1"
+		sudo launchctl kickstart -k system/"$1"
 		;;
 	paths | dirs)
 		echo "/Library/LaunchDaemons 				# 第三方软件安装"

@@ -2,6 +2,8 @@
 
 - https://docs.determinate.systems/determinate-nix/
 - https://manual.determinate.systems/introduction.html
+- https://github.com/DeterminateSystems/nix-installer/releases
+- https://github.com/DeterminateSystems/nix-installer
 
 Determinate Nix has two core components:
 

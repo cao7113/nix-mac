@@ -10,6 +10,15 @@ alias what="which -a" # whence -a
 alias fun="whence -f" # functions xxx
 alias opts="getopt"
 
+# 检测 zoxide 是否存在
+if command -v zoxide >/dev/null 2>&1; then
+    # 如果存在，初始化 zoxide 并将别名设为 j
+    eval "$(zoxide init zsh --cmd j)"
+else
+    # 否则降级使用传统的 cd
+    alias j="cd"
+fi
+
 # alias c="clear" # use Ctrl+l instead
 
 # r # builtin r for repeat, Great!!! 

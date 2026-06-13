@@ -97,15 +97,15 @@ tasks:
     # https://zero-to-nix.com/start/install/
     # https://determinate.systems/nix-installer/
     # https://github.com/DeterminateSystems/nix-installer/releases
+    # https://github.com/DeterminateSystems/nix-installer/blob/v3.21.1/nix-installer.sh
 
     export NIX_INSTALLER_DIAGNOSTIC_ENDPOINT=""
-
     # curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install # --no-confirm
 
-    mkdir -p _local && cd _local
-    install_script=nix-installer.sh
+    # mkdir -p _local && cd _local
+    install_script=./install.sh
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix > $install_script
-    chmod +x $install_script
+    chmod u+x $install_script
 
     echo "Please use GUI installer package as official guide!"
     # ./$install_script install

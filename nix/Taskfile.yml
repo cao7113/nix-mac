@@ -1,0 +1,6 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  man.conf: |
+    man nix.conf | col -b  > _local/man-nix.conf.txt

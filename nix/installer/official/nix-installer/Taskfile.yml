@@ -1,0 +1,16 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: |
+    echo hi nix-installer
+  
+  setup: |
+    # https://github.com/NixOS/nix-installer#installer-settings
+    export NIX_INSTALLER_LOGGER=pretty 
+    export NIX_INSTALLER_VERBOSITY=vv 
+    export NIX_INSTALLER_ENABLE_FLAKES=true 
+    export NIX_INSTALLER_EXPLAIN=true 
+    export NIX_INSTALLER_PROXY=http://localhost:1087
+    # curl -sSfL https://artifacts.nixos.org/nix-installer | sh -s -- install -vv
+    ./install.sh install -vv

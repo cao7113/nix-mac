@@ -5,11 +5,11 @@
   inputs = {
     # https://github.com/DeterminateSystems/determinate
     # Determinate 3.* module
-    determinate = {
-      # url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
-      url = "github:DeterminateSystems/determinate/v3.21.0";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # determinate = {
+    #   # url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
+    #   url = "github:DeterminateSystems/determinate/v3.21.0";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
 
     # https://github.com/NixOS/nixpkgs/tree/nixpkgs-25.11-darwin
     # Stable Nixpkgs (use 0.1 for unstable)
@@ -106,7 +106,7 @@
         };
 
         modules = [
-          inputs.determinate.darwinModules.default
+          # inputs.determinate.darwinModules.default
           inputs.home-manager.darwinModules.home-manager
           {
             # 必须通过 extraSpecialArgs 显式把 username 传给 home-manager 的内部模块
@@ -117,7 +117,7 @@
           }
 
           ## import modules
-          nix/determinate
+          # nix/determinate
           ./darwin
           {
             # uncomment below if brew is not needed, it will speed up the evaluation especially init-setup!!!

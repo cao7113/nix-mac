@@ -62,7 +62,7 @@ nix run nixpkgs#cowsay -- "Hello"
 mkdir -p ~/dev && cd ~/dev
 git clone -v --depth=3 https://github.com/cao7113/nix-mac.git
 cd nix-mac
-sudo nix run nix-darwin/nix-darwin-25.11#darwin-rebuild -- switch --flake .#mac --show-trace --impure
+sudo nix run "nix-darwin/nix-darwin-26.05#darwin-rebuild" -- switch --flake ".#mac" --show-trace --impure
 # Then
 iup
 ```

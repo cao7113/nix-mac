@@ -1,0 +1,38 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: |
+    echo hi lix-installer
+  
+  install: |
+    ./tmp-lix-installer install -vv --logger=pretty # --proxy http://127.0.0.1:1087
+
+    # Nix was installed successfully!
+    # To get started using Nix, open a new shell or run `. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh`
+
+    # 安装完后，installer被复制到/nix/nix-installer一份
+
+    ./tmp-lix-installer self-test
+    # INFO nix-installer v3.95.0
+    # INFO Successfully tested Nix install in all discovered shells. shells=["sh", "bash", "zsh"]
+
+  dl: |
+    # tmpfile=$(mktemp -u ./tmp-installer.XXXXXX)
+    tmpfile=./tmp-lix-installer
+    # if [ -f "$tmpfile" ]; then
+    #   echo "$tmpfile found, please remove it firstly"
+    #   exit
+    # fi
+
+    # --silent --speed-limit 250000 --speed-time 15 # network is slow locally!!!
+    curl --retry 3 --continue-at - -vvv --proto '=https' --tlsv1.2 --ciphers "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384" --show-error --fail --location https://install.lix.systems/lix/lix-installer-aarch64-darwin --output $tmpfile
+
+    chmod u+x $tmpfile
+
+  setup: |
+    # https://lix.systems/install/#on-any-other-linuxmacos-system
+    curl -sSf -L https://install.lix.systems/lix | sh -s -- install
+  
+  uninstall: |
+    /nix/nix-installer uninstall
