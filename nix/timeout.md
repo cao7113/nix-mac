@@ -24,8 +24,14 @@ sudo http_proxy=$http_proxy https_proxy=$https_proxy nix run "nix-darwin/nix-dar
 先下载（使用当前proxy环境变量）
 nix build ".#darwinConfigurations.mac.system" --no-link 
 后激活
+nix build ".#darwinConfigurations.mac.system" 
+因为你之前已经把东西都下好了，这一步会瞬间（0秒）完成。它唯一做的事情是在你当前目录下生成一个名为 result 的软链接，这个软链接直接指向你在 Store 里的全新系统闭包。
 sudo darwin-rebuild switch --flake ".#mac" --impure
+就可以
+sudop darwin-rebuild switch --flake ".#mac" --show-trace --impure
+
 sudop nix run "nix-darwin/nix-darwin-26.05#darwin-rebuild" -- switch --flake ".#mac" --show-trace --impure
+sudop nix --extra-experimental-features nix-command --extra-experimental-features flakes run "nix-darwin/nix-darwin-26.05#darwin-rebuild" -- switch --flake ".#mac" --show-trace --impure
 
 
 [0/58 built, 16/1/53 copied (90.4/932.5 MiB), 19.9/176.7 MiB DL] fetching openssl-3.6.2 from https://cache.nixos.org
