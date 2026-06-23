@@ -78,10 +78,5 @@ tasks:
   # *.local 访问
   # *.lh
 
-  ## host ops
-  # hostname # xxx.local
-  # sudo scutil --set HostName rjmac.local
-  # hostinfo
-
   ## DNS
   # host qq.com

@@ -62,8 +62,6 @@
         target:
         if current_level == "all" then
           true
-        else if current_level == "brewer-more" then
-          (target != "all")
         else if current_level == "brewer" then
           (target == "basic" || target == "brewer")
         else

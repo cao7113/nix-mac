@@ -1,0 +1,13 @@
+#!/usr/bin/env zsh
+
+# “电脑名称 (ComputerName)”为了给人（隔空投送、访客）看的。
+# “主机名 (HostName)”是为了给网络设备（路由器、服务器）看的，
+
+for n in ComputerName HostName LocalHostName ; do
+  echo -n "$n: "
+  scutil --get $n 2>/dev/null || echo "Not Set (未设置)"
+done
+
+# sudo scutil --set ComputerName "mac" && sudo scutil --set HostName "mac" && sudo scutil --set LocalHostName "mac"
+# hostname # xxx.local
+# hostinfo

@@ -57,21 +57,18 @@
   };
 
   home-manager.users.${username} = {
+
     programs.zsh.initContent = lib.mkIf (need_least "brewer") (
+      # Adjust how often this is run with `$HOMEBREW_AUTO_UPDATE_SECS` or disable with `$HOMEBREW_NO_AUTO_UPDATE=1`. Hide these hints with `$HOMEBREW_NO_ENV_HINTS=1` (see `man brew`).
       lib.mkBefore ''
         echo "# Initializing Homebrew environment for ${username}..."
         # 让 Homebrew 的环境变量生效
         if [[ -e /opt/homebrew/bin/brew ]]; then
           eval "$(/opt/homebrew/bin/brew shellenv)"
         fi
+        # 3600 * 24 * 7
+        export HOMEBREW_AUTO_UPDATE_SECS=604800
       ''
     );
-    #  ''
-    #     echo "# Initializing Homebrew environment for ${username}..."
-    #     # 让 Homebrew 的环境变量生效 (如果你通过 Homebrew 安装了某些工具，这一步很重要)
-    #     if [[ -e /opt/homebrew/bin/brew ]]; then
-    #       eval "$(/opt/homebrew/bin/brew shellenv zsh)"
-    #     fi
-    #   '';
   };
 }

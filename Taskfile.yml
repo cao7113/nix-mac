@@ -14,16 +14,14 @@ tasks:
   # nix eval --impure --raw --expr 'builtins.currentSystem'
 
   dp: |
-    sudo NIX_MAC_LEVEL=basic darwin-rebuild switch --flake /Users/rj/nix-mac --verbose --impure
+    sudo NIX_MAC_LEVEL=basic darwin-rebuild switch --flake ~/nix-mac --verbose --impure
   dp.brew: |
-    sudo NIX_MAC_LEVEL=brewer darwin-rebuild switch --flake /Users/rj/nix-mac --verbose --impure
-  dp.brew.more: |
-    sudo NIX_MAC_LEVEL=brewer-more darwin-rebuild switch --flake /Users/rj/nix-mac --verbose --impure
+    sudo NIX_MAC_LEVEL=brewer darwin-rebuild switch --flake ~/nix-mac --verbose --impure
   dp.all: |
-    sudo NIX_MAC_LEVEL=all darwin-rebuild switch --flake /Users/rj/nix-mac --verbose --impure
+    sudo NIX_MAC_LEVEL=all darwin-rebuild switch --flake ~/nix-mac --verbose --impure
 
   eval.casks: |
-    NIX_MAC_LEVEL=brewer-more nix eval ".#darwinConfigurations.mac.config.homebrew.casks" --json --impure
+    NIX_MAC_LEVEL=all nix eval ".#darwinConfigurations.mac.config.homebrew.casks" --json --impure
 
   new.mac: |
     nix flake new --template "https://flakehub.com/f/DeterminateSystems/flake-templates/*#nix-darwin" mac
@@ -36,17 +34,7 @@ tasks:
   repl: |
     nix repl
   rp: nix repl
-  
-  host.names: |
-    # “电脑名称 (ComputerName)”为了给人（隔空投送、访客）看的。
-    # “主机名 (HostName)”是为了给网络设备（路由器、服务器）看的，
-    scutil --get ComputerName
-    scutil --get HostName
-    scutil --get LocalHostName
-    # sudo scutil --set ComputerName "mac" && sudo scutil --set HostName "mac" && sudo scutil --set LocalHostName "mac"
 
-  # direnv status
-  # direnv reload
 
   fmt: |
     rg --files -g "*.nix" -0 | xargs -0 nixfmt
@@ -197,7 +185,6 @@ tasks:
     nix flake init -t nix-darwin/nix-darwin-25.11
     sed -i '' "s/simple/$(scutil --get LocalHostName)/" flake.nix
   
-
   ## Standalone home-manager
   # use.hm: |
   #   nix run home-manager -- switch
