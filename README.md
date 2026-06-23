@@ -2,16 +2,6 @@
 
 My `nix-darwin` + `home-manager` setup and macOS recipies.
 
-## Overview
-
-- Use `nix/installer/official-installer` to install and manage the Nix version.
-- `nix-mac` is a public repository based on `nix-darwin` + `home-manager`, managing essential macOS software like `zsh`, `postgresql`, etc.
-- `dot-sec` is a private repository based on `home-manager`, managing private configuration data, including `sops-nix`, `age`, `ssh`, and more.
-  - `dot-sec` is a standalone git repo, symlinked to `~/.sec` as an optional `home-manager` submodule.
-    - If `~/.sec` exists, it will be deployed together with `darwin-rebuild`.
-    - If it doesn't exist, it won't affect the `nix-darwin` deployment—just a missing notice will be shown.
-- `main.zsh` is the zsh rc entry file
-
 ## Setup
 
 ```
@@ -21,6 +11,16 @@ curl -fsSL https://raw.githubusercontent.com/cao7113/nix-mac/main/setup.zsh | co
 # daily use
 mdp # iup
 ```
+
+## Overview
+
+- Use `nix/installer/official-installer` to install and manage the Nix version.
+- `nix-mac` is a public repository based on `nix-darwin` + `home-manager`, managing essential macOS software like `zsh`, `postgresql`, etc.
+- `dot-sec` is a private repository based on `home-manager`, managing private configuration data, including `sops-nix`, `age`, `ssh`, and more.
+  - `dot-sec` is a standalone git repo, symlinked to `~/.sec` as an optional `home-manager` submodule.
+    - If `~/.sec` exists, it will be deployed together with `darwin-rebuild`.
+    - If it doesn't exist, it won't affect the `nix-darwin` deployment—just a missing notice will be shown.
+- `main.zsh` is the zsh rc entry file
 
 ### Test nix
 
