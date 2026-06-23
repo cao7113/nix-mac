@@ -128,17 +128,11 @@ read_proxy_info() {
 # ==========================================
 
 check_commands() {
-	log_step "检查 required commands"
+	log_step "检查 required commands (注意：会失败，需要在图形界面完成xcode-select的安装，然后重试)"
 	if command -v git &>/dev/null; then
 		git --version
 	else
 		log_err "系统中未找到 git 命令！"
-		exit 1
-	fi
-	if command -v curl &>/dev/null; then
-		curl --version
-	else
-		log_err "系统中未找到 curl 命令！"
 		exit 1
 	fi
 }
@@ -197,7 +191,7 @@ ensure_homebrew() {
 
 	if run_with_proxy curl -fsSL -o "$tmp_brew_sh" https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh; then
 		chmod +x "$tmp_brew_sh"
-		NONINTERACTIVE=1 run_with_proxy "$tmp_brew_sh" || log_warn "Homebrew 脚本执行返回了非零状态，尝试继续..."
+		run_with_proxy NONINTERACTIVE=1 "$tmp_brew_sh" || log_warn "Homebrew 脚本执行返回了非零状态，尝试继续..."
 	else
 		log_warn "下载 Homebrew 安装脚本失败，跳过 Homebrew 安装。"
 	fi
@@ -243,6 +237,8 @@ bootstrap_nix_darwin() {
 
 	local nix_bin="/nix/var/nix/profiles/default/bin/nix"
 	run_with_proxy sudo "$nix_bin" run "nix-darwin/nix-darwin-26.05#darwin-rebuild" -- switch --impure --show-trace --flake "${NIX_MAC_DIR}#mac"
+
+	# todo 中断重试？
 
 	# nix build "nix-darwin/nix-darwin-26.05#darwin-rebuild" -vv --debug --no-link
 	# ./result/darwin-rebuild ...

@@ -6,14 +6,18 @@
 
 ```
 brew install utm
+
+# vm data: ~/Library/Containers/com.utmapp.UTM/Data/Documents
+du -sh ~/Library/Containers/com.utmapp.UTM/Data/Documents/*
+# 每个macOS vm非常庞大 30G+ ！！！
 ```
 
-## 共享Host主机代理设置
+### 共享Host主机代理设置
 
 - ShadowsocksX-NG Settings -> HTTP -> HTTP Proxy Listen Address: 0.0.0.0 (instead origin 127.0.0.1)
 - VM Guest set: curl -x http://192.168.64.1:1087 https://www.google.com
 
-## 复制粘贴 & 屏幕共享
+### 复制粘贴 & 屏幕共享
 
 用宿主机的「屏幕共享」应用去连虚拟机。这样不仅能完美解决文本复制粘贴，连文件拖拽、动态分辨率缩放都能完美支持。
 

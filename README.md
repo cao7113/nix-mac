@@ -5,8 +5,17 @@ My `nix-darwin` + `home-manager` setup and macOS recipies.
 ## Setup
 
 ```
+
 # init setup
 curl -fsSL https://raw.githubusercontent.com/cao7113/nix-mac/main/setup.zsh | command zsh -s
+# try below when blocked
+curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/cao7113/nix-mac/main/setup.zsh | command zsh -s
+curl -fsSL https://cdn.jsdelivr.net/gh/cao7113/nix-mac@main/setup.zsh | command zsh -s
+curl -fsSL https://gitmirror.com/https://raw.githubusercontent.com/cao7113/nix-mac/main/setup.zsh | command zsh -s
+
+# 上面的会使用默认代理。。。如需要配置代理，需要
+[[ ! -f /tmp/mac.sh ]] && curl -fsSL https://ghproxy.net/https://raw.githubusercontent.com/cao7113/nix-mac/main/setup.zsh > /tmp/mac.sh && chmod +x /tmp/mac.sh && /tmp/mac.sh
+# /tmp/mac.sh
 
 # daily use
 mdp # iup
@@ -31,6 +40,12 @@ nix run "nixpkgs#hello" -- --version
 nix shell "github:NixOS/nixpkgs/nixos-unstable#hello"
 nix run "nixpkgs#cowsay" -- "Hello"
 # nix shell nixpkgs#pkg1 nixpkgs#pkg2
+```
+
+## UTM try
+
+```
+proxy host: 192.168.64.1
 ```
 
 ## Notes
