@@ -4,14 +4,21 @@
   pkgs,
   lib,
   username,
+  current_level,
+  need_least,
   ...
 }:
 {
   # https://nix-darwin.github.io/nix-darwin/manual/index.html
 
+  # 激活配置时自动重启受影响 live 进程（如 Finder/Dock 等），让配置立即生效
+  system.activationScripts.postActivation.text = ''
+    echo "## Current nix-mac level: ${current_level} ##"
+  '';
+
   # Used for backwards compatibility, please read the changelog before changing.
   # system.stateVersion = 6;
-   system.stateVersion = 7; # for 26.05
+  system.stateVersion = 7; # for 26.05
 
   system.primaryUser = username;
 
@@ -34,7 +41,6 @@
   system.defaults.smb.NetBIOSName = "mac";
 
   imports = [
-    determinate/default.nix
     ./defaults.nix
     ./pkgs.nix
     # launchd/test.nix
@@ -61,6 +67,4 @@
     himac = "echo hello from nix-darwin config file shell aliases";
   };
 
-  # Other configuration parameters
-  # See here: https://nix-darwin.github.io/nix-darwin/manual
 }

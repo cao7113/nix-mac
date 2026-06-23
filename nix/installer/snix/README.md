@@ -1,0 +1,3 @@
+# Snix
+
+- https://snix.dev/

@@ -33,7 +33,7 @@ Nix 会将下载的 tarball 缓存在 `/nix/store` 中。只要你的 `flake.loc
 - **手动预下载**：如果你有多个项目共用一个版本，可以用 `nix-prefetch-url` 提前把 tarball 塞进 Store：
 
 ```bash
-nix-prefetch-url --unpack https://github.com/NixOS/nixpkgs/archive/refs/tags/25.11.tar.gz
+nix-prefetch-url --unpack https://github.com/NixOS/nixpkgs/archive/refs/tags/26.05.tar.gz
 
 ```
 

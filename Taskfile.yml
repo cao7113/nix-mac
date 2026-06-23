@@ -1,12 +1,6 @@
 # https://taskfile.dev/docs/guide
 # https://taskfile.dev/reference/templating/
 version: '3'
-includes:
-  determinate:
-    taskfile: determinate/Taskfile.yml
-    aliases: [d, ds]
-    optional: true
-
 tasks:
   default: |
     echo hi nix-darwin and home-manager
@@ -19,8 +13,23 @@ tasks:
   # nix run "nixpkgs#hello"
   # nix eval --impure --raw --expr 'builtins.currentSystem'
 
+  dp: |
+    sudo NIX_MAC_LEVEL=basic darwin-rebuild switch --flake /Users/rj/nix-mac --verbose --impure
+  dp.brew: |
+    sudo NIX_MAC_LEVEL=brewer darwin-rebuild switch --flake /Users/rj/nix-mac --verbose --impure
+  dp.brew.more: |
+    sudo NIX_MAC_LEVEL=brewer-more darwin-rebuild switch --flake /Users/rj/nix-mac --verbose --impure
+  dp.all: |
+    sudo NIX_MAC_LEVEL=all darwin-rebuild switch --flake /Users/rj/nix-mac --verbose --impure
+
+  eval.casks: |
+    NIX_MAC_LEVEL=brewer-more nix eval ".#darwinConfigurations.mac.config.homebrew.casks" --json --impure
+
   new.mac: |
     nix flake new --template "https://flakehub.com/f/DeterminateSystems/flake-templates/*#nix-darwin" mac
+
+  top.build: |
+    nix build ".#darwinConfigurations.mac.config.system.build.toplevel"
 
   b: |
     darwin-rebuild build --flake .#mac
@@ -156,7 +165,8 @@ tasks:
   ln.dot: |
     ln -s $(pwd) ~/.nix
 
-  uninstall: /nix/nix-installer uninstall
+  uninstall: |
+    /nix/nix-installer uninstall
 
   # 由于 Nix 每次下载都会保存在 /nix/store，时间久了会占用大量硬盘空间。
   # 清理无用缓存：

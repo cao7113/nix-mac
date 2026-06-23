@@ -1,4 +1,3 @@
-user   flake:nixpkgs path:/Users/rj/dev/ops/dot-nix/_local/nixpkgs
 global flake:agda github:agda/agda
 global flake:arion github:hercules-ci/arion
 global flake:blender-bin github:edolstra/nix-warez?dir=blender

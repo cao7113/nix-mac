@@ -7,6 +7,10 @@
 }:
 {
   # gh: GitHub CLI https://cli.github.com/
+  # run with local proxy: 
+  # gh login # generate local ssh keys as prompts
+  # gh ssh add ~/.ssh/id-xxx
+  # gh ssh ls
   programs.zsh.initContent = ''
     alias ghcmd="command gh" 
 

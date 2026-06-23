@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- 1. 任务的唯一标识 -->
+    <key>Label</key>
+    <string>com.example.myenvjob</string>
+
+    <!-- 2. 执行的程序及参数 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/node</string>
+        <string>/Users/yourname/script.js</string>
+    </array>
+
+    <!-- 3. 【核心】环境变量配置规范 -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>MY_API_KEY</key>
+        <string>secret_value_12345</string>
+        <key>APP_MODE</key>
+        <string>production</string>
+        <!-- 注意：launchd 默认的 PATH 极其精简，通常需要在这里补全 -->
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- 4. 触发条件（例如加载时立即运行） -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/myjob.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/myjob.stderr.log</string>
+</dict>
+</plist>

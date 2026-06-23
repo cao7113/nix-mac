@@ -5,15 +5,13 @@
   username,
   inputs,
   repo_path,
+  need_least,
   ...
 }:
 {
   # mise 更新较快，直接使用brew版本
   homebrew = {
-    enable = true;
-    onActivation.cleanup = "zap"; # 自动清理未在配置中声明的物理 Homebrew 包
-
-    brews = [
+    brews = lib.optionals (need_least "all") [
       "mise"
     ];
   };
@@ -23,21 +21,23 @@
   home-manager.users.${username} =
     { config, ... }:
     {
-      # todo pass repo_path
-      home.file.".config/mise/config.toml".source =
-        config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/${repo_path}/tools/mise/config.toml";
+      home.file.".config/mise/config.toml" = lib.mkIf (need_least "all") {
+        source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/${repo_path}/tools/mise/config.toml";
+      };
 
       # home.file.".config/mise/config.toml".text = ''
       #   copy config.toml content here, but it will be hard to maintain, so use source instead
       # '';
 
       # 手动将 mise 钩子注入到 Zsh 中（替代原本的 enableZshIntegration）
-      programs.zsh.initContent = lib.mkAfter ''
-        # 注入 Homebrew 安装的 mise 钩子
-        echo "# Running: mise homebrew hook..."
-        if command -v mise &> /dev/null; then
-          eval "$(mise activate zsh)"
-        fi
-      '';
+      programs.zsh.initContent = lib.mkIf (need_least "all") (
+        lib.mkAfter ''
+          # 注入 Homebrew 安装的 mise 钩子
+          echo "# Running: mise homebrew hook..."
+          if command -v mise &> /dev/null; then
+            eval "$(mise activate zsh)"
+          fi
+        ''
+      );
     };
 }

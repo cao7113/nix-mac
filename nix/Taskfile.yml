@@ -1,0 +1,16 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  man.conf: |
+    mkdir -p _local
+    # https://nix.dev/manual/nix/2.34/command-ref/conf-file.html#available-settings
+    man nix.conf | col -b  > _local/man-nix.conf.txt
+
+  ln.conf: |
+    mkdir -p _local
+    ln -snf /etc/nix _local/etc-nix
+
+  ln.daemons: |
+    mkdir -p _local
+    ln -snf /Library/LaunchDaemons _local/daemons

@@ -1,8 +1,8 @@
-# Cli
-
-iTerm2 todo
+# CLI
 
 ```
+# say is /usr/bin/say
+
 # 实时搜索文件内容并在预览窗口显示
 rg --line-number --no-heading --color=always "." | fzf --ansi --preview 'preview_script {}'
 
@@ -22,4 +22,3 @@ bindkey '^G' fzf-cd-widget
 man 5 ssh_config
 ```
 
-percent-encoded

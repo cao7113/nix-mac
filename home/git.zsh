@@ -16,6 +16,14 @@ function qci() {
 	git add . && git commit -m "$*"
 }
 
+function lclone() {
+	(
+		mkdir -p _local
+		cd _local
+		git clone --depth 1 "$@"
+	)
+}
+
 function git-log() {
 	# 1. 修复 Bash/Zsh 的默认值语法错误
 	local num=50
@@ -139,3 +147,4 @@ function gbo() {
 	# 太慢，每次都要请求github api，尽量从本地读取！！！
 	# GH_DEBUG=api gh browse -n
 }
+alias og="gbo"

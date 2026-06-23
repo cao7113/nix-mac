@@ -1,31 +1,27 @@
 {
   description = "nix-darwin on Determinate Nix";
 
-  # Flake inputs
   inputs = {
     # https://github.com/DeterminateSystems/determinate
     # Determinate 3.* module
-    determinate = {
-      # url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
-      url = "github:DeterminateSystems/determinate/v3.21.0";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # determinate = {
+    #   # url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
+    #   url = "github:DeterminateSystems/determinate/v3.21.0";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
 
-    # https://github.com/NixOS/nixpkgs/tree/nixpkgs-25.11-darwin
-    # Stable Nixpkgs (use 0.1 for unstable)
-    # nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0";
-    # nixpkgs.url = "github:nixos/nixpkgs/nixos-unstabl
+    # https://github.com/NixOS/nixpkgs/tree/nixpkgs-26.05-darwin
+    # nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable
+    # nixpkgs.url = "git+https://mirrors.ustc.edu.cn/nixpkgs.git?ref=nixpkgs-unstable";
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-26.05-darwin";
 
-    # https://github.com/nix-darwin/nix-darwin/tree/nix-darwin-25.11
+    # https://github.com/nix-darwin/nix-darwin/tree/nix-darwin-26.05
     nix-darwin = {
-      # Stable nix-darwin (use 0.1 for unstable)
-      # url = "https://flakehub.com/f/nix-darwin/nix-darwin/0";
       url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # https://github.com/nix-community/home-manager/tree/release-25.11
+    # https://github.com/nix-community/home-manager/tree/release-26.05
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -56,12 +52,23 @@
 
   };
 
-  # say is /usr/bin/say
-
   # Flake outputs
   outputs =
-    { self, ... }@inputs:
+    inputs@{ self, ... }:
     let
+      # 我们可以通过环境变量来动态读取当前想要构建的级别，默认是 basic
+      current_level = builtins.getEnv "NIX_MAC_LEVEL";
+      need_least =
+        target:
+        if current_level == "all" then
+          true
+        else if current_level == "brewer-more" then
+          (target != "all")
+        else if current_level == "brewer" then
+          (target == "basic" || target == "brewer")
+        else
+          (target == "basic"); # 默认为 basic
+
       # The values for `username` and `system` supplied here are used to construct the hostname
       # for your system, of the form `${username}-${system}`. Set these values to what you'd like
       # the output of `scutil --get LocalHostName` to be.
@@ -73,7 +80,7 @@
       # Your system type (Apple Silicon)
       system = "aarch64-darwin";
 
-      repo_path = "dev/nix-mac";
+      repo_path = "nix-mac";
 
       # pkgs = inputs.nixpkgs.legacyPackages.${system};
 
@@ -102,28 +109,38 @@
             hostname
             system
             repo_path
+            need_least
+            current_level
             ;
         };
 
+        # nixpkgs.config.allowUnfree = true;
+
         modules = [
-          inputs.determinate.darwinModules.default
+          # inputs.determinate.darwinModules.default
+          # nix/installer/determinate
+          nix/installer/official-installer
           inputs.home-manager.darwinModules.home-manager
           {
             # 必须通过 extraSpecialArgs 显式把 username 传给 home-manager 的内部模块
             # 隔离性：nix-darwin 和 home-manager 是两个独立的系统。你传给 darwinSystem 的参数，默认只在 nix-darwin 的配置项里有效。
             # 隧道效应：当你进入 home-manager.users.${username} 内部时，它开启了一个新的作用域。
             # 如果你不写 extraSpecialArgs，_home.nix 就拿不到外界的 username 变量。
-            home-manager.extraSpecialArgs = { inherit username repo_path inputs; };
+            home-manager.extraSpecialArgs = {
+              inherit
+                username
+                repo_path
+                inputs
+                need_least
+                current_level
+                ;
+            };
           }
 
           ## import modules
           ./darwin
-          {
-            # uncomment below if brew is not needed, it will speed up the evaluation especially init-setup!!!
-            # config.brewer.brew.enable = false;
-          }
-          ./brew
           ./home
+          ./brew
           ./tools
         ];
       };
