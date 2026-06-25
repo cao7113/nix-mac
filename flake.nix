@@ -2,14 +2,6 @@
   description = "nix-darwin on Determinate Nix";
 
   inputs = {
-    # https://github.com/DeterminateSystems/determinate
-    # Determinate 3.* module
-    # determinate = {
-    #   # url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
-    #   url = "github:DeterminateSystems/determinate/v3.21.0";
-    #   inputs.nixpkgs.follows = "nixpkgs";
-    # };
-
     # https://github.com/NixOS/nixpkgs/tree/nixpkgs-26.05-darwin
     # nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable
     # nixpkgs.url = "git+https://mirrors.ustc.edu.cn/nixpkgs.git?ref=nixpkgs-unstable";
@@ -138,6 +130,7 @@
           ## import modules
           ./darwin
           ./home
+          ./net
           ./brew
           ./tools
         ];

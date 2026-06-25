@@ -28,6 +28,9 @@ function proxy() {
 	t | test)
 		curl -v https://www.google.com
 		;;
+	conf | cache)
+		proxy-cache "$@"
+		;;
 	*)
 		echo "# Current proxy"
 		echo "export http_proxy=$http_proxy"
@@ -40,7 +43,12 @@ function proxy() {
 
 function proxy-cache() {
 	if (($# == 0)); then
-		type -f proxy-cache
+		# type -f proxy-cache
+		cat <<-EOF
+			Usage:
+			proxy-cache PROXY_HOST                  
+			proxy-cache PROXY_HOST 192.168.0.1
+		EOF
 		return
 	fi
 
