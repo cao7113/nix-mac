@@ -15,6 +15,9 @@ PingPlotter
 
 https://test.ustc.edu.cn/
 https://www.speedtest.cn/
+- https://github.com/masonr/yet-another-bench-script
+- http://rixcloud.speedtestcustom.com/
+- https://fiber.google.com/speedtest/
 
 ## CLI
 

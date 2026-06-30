@@ -26,7 +26,9 @@ function proxy() {
 		proxy info
 		;;
 	t | test)
+		set -x
 		curl -v https://www.google.com
+		set +x
 		;;
 	conf | cache)
 		proxy-cache "$@"

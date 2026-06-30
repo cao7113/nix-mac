@@ -80,10 +80,11 @@ fi
 DSH_PROFILE_ID="dummy" source "$nix_mac_home/zsh/main.zsh"
 source $nix_mac_home/nix/main.zsh
 source $nix_mac_home/darwin/main.zsh
-source $nix_mac_home/tools/main.zsh
 # todo put other place
 source $nix_mac_home/home/git.zsh
 source $nix_mac_home/home/dot-sec.zsh
+source $nix_mac_home/net/main.zsh
+source $nix_mac_home/tools/main.zsh
 
 # # The home-manager switch command performs a combined build and activation.
 # function nix-mac-home-manager() {

@@ -22,7 +22,7 @@
     # environment.variables.HOMEBREW_VERBOSE = "1";
 
     # brew update
-    onActivation.autoUpdate = true;
+    # onActivation.autoUpdate = true;
     # onActivation.upgrade = true;
 
     # ⚠️ 警告：启用 zap 会删除所有不在下面列表中的手动安装包 自动卸载不在列表中的包，实现真正的“声明式”
