@@ -6,15 +6,14 @@ set -euo pipefail
 # ==========================================
 REPO_DIR="${0:A:h}"
 STATE_FILE="${REPO_DIR}/.nix_mac_level"
-VALID_LEVELS=(basic brewer brewer-more all)
+VALID_LEVELS=(basic brewer all)
 SCRIPT_NAME=${0}
 
 # 使用 Zsh 关联数组管理状态提示文案，避免臃肿的 case 套娃
 typeset -A LEVEL_HINTS=(
 	basic "仅配置基本工具和 Zsh，未激活 Homebrew 模块。"
 	brewer "激活 Homebrew 本体并安装 VSCode, Ghostty 等核心常用工具。"
-	brewer-more "安装 OrbStack, Notion 等大体量、重度网络依赖的 Cask。"
-	all "完全体环境（包括 Google Chrome 等需要严格代理的边缘工具，需要登陆Apple ID）。"
+	all "完全体环境（包括 Google Chrome, Notion 等需要严格代理的边缘工具，需要登陆Apple ID）。"
 )
 
 log_step() { echo -e "\n\033[1;32m## $1\033[0m"; }
@@ -124,8 +123,7 @@ calculate_next_level() {
 	up | next)
 		case "$cur" in
 		"basic") echo "brewer" ;;
-		"brewer") echo "brewer-more" ;;
-		*) echo "all" ;; # brewer-more 或 all 都收敛到 all
+		*) echo "all" ;; # all 都收敛到 all
 		esac
 		;;
 	a | apply)
@@ -179,7 +177,6 @@ main() {
 		# 后置跟进说明
 		case "$next_level" in
 		"brewer") log_warn "后续提示: 核心环境已就绪。请确保您的代理软件开启了 LAN 共享，然后再次运行 ${SCRIPT_NAME} up 即可晋升到下一级。" ;;
-		"brewer-more") log_warn "后续提示: 重度工具已下载完成。最后一步请确保全局代理畅通，然后运行 ${SCRIPT_NAME} up 达到完全体。" ;;
 		"all") log_step "终点提示: 所有软件安装完毕！后续若有配置修改，直接执行常规的 ${SCRIPT_NAME} apply 即可。" ;;
 		esac
 	else

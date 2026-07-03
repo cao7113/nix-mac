@@ -1,7 +1,6 @@
-# echo "# loading tools/net settings..."
+## Proxy helpers
 
 alias p="proxy"
-
 function proxy() {
 	local act=$1
 	(($# > 0)) && shift
@@ -27,7 +26,12 @@ function proxy() {
 		proxy info
 		;;
 	t | test)
+		set -x
 		curl -v https://www.google.com
+		set +x
+		;;
+	conf | cache)
+		proxy-cache "$@"
 		;;
 	*)
 		echo "# Current proxy"
@@ -41,7 +45,12 @@ function proxy() {
 
 function proxy-cache() {
 	if (($# == 0)); then
-		type -f proxy-cache
+		# type -f proxy-cache
+		cat <<-EOF
+			Usage:
+			proxy-cache PROXY_HOST                  
+			proxy-cache PROXY_HOST 192.168.0.1
+		EOF
 		return
 	fi
 
@@ -75,6 +84,3 @@ function sudop() {
 		sudo http_proxy=http://$host:$port https_proxy=http://$host:$port all_proxy=socks5h://$host:$socks_port "$@"
 	fi
 }
-
-## curl
-# 注意homebrew版本的curl和mac自带的/usr/bin/curl存在差异，如在使用系统证书，sslkeylog支持等

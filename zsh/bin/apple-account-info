@@ -1,0 +1,14 @@
+#!/usr/bin/env zsh
+
+# MobileMeAccounts：对应的实际文件是~/Library/Preferences/MobileMeAccounts.plist , Binary文件
+# Accounts：是这个文件里的一个特定“键（Key）”，它里面存储了一个数组，记录了当前登录的账户信息。
+
+case "$1" in
+id)
+	plutil -extract "Accounts.0.AccountID" raw ~/Library/Preferences/MobileMeAccounts.plist
+	;;
+*)
+	# defaults read MobileMeAccounts Accounts | plutil -convert json -o - - | jq -r '.[0].AccountID // empty'
+	plutil -convert json -o - ~/Library/Preferences/MobileMeAccounts.plist 2>/dev/null | jq '(.Accounts[0] // {}) | del(.Services)'
+	;;
+esac

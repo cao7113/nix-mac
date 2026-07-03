@@ -72,16 +72,3 @@ tasks:
   # 或者（系统级 Daemon 用 system 代替 gui）：
   #   launchctl print system/com.example.myagent
   # 这会显示该服务的运行状态和部分配置信息，但**不会显示完整的 plist 文件内容
-
-  ## DNS on Mac
-  # mDNS
-  # *.local 访问
-  # *.lh
-
-  ## host ops
-  # hostname # xxx.local
-  # sudo scutil --set HostName rjmac.local
-  # hostinfo
-
-  ## DNS
-  # host qq.com

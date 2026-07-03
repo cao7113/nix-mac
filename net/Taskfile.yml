@@ -1,0 +1,38 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  install.speedtest: |
+    brew tap teamookla/speedtest
+    # brew update
+    brew install speedtest
+    # Example how to remove conflicting or old versions using brew
+    # brew uninstall speedtest --force
+    # brew uninstall speedtest-cli --force
+
+  uninstall.speedtest: |
+    brew uninstall speedtest
+    # 取消订阅
+    brew untap teamookla/speedtest
+
+  install.librespeed: |
+    # https://github.com/librespeed/homebrew-tap
+    brew tap librespeed/tap
+    brew install librespeed-cli
+    # 测试效果不如speedtest
+  uninstall.librespeed: |
+    brew uninstall librespeed-cli
+    # 取消订阅
+    brew untap librespeed/tap
+  
+  install-httpie:
+    desc: install httpie https://httpie.org/docs
+    status:
+      - which http > /dev/null
+    cmds:
+      - brew install httpie
+
+  install-hostctl:
+    desc: https://guumaster.github.io/hostctl/docs/installation/#homebrew
+    cmds:
+      - brew install guumaster/tap/hostctl

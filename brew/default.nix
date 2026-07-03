@@ -21,20 +21,21 @@
     # 或者通过全局环境变量（更彻底）
     # environment.variables.HOMEBREW_VERBOSE = "1";
 
+    # brew update
     # onActivation.autoUpdate = true;
     # onActivation.upgrade = true;
 
     # ⚠️ 警告：启用 zap 会删除所有不在下面列表中的手动安装包 自动卸载不在列表中的包，实现真正的“声明式”
-    # onActivation.cleanup = "zap"; # "none"; # 自动清理未在配置中声明的物理 Homebrew 包
+    # 自动清理不再需要的包和外挂
+    # onActivation.cleanup = "zap"; # "none";
 
     brews = lib.optionals (need_least "all") [
-      # mas 是一个命令行工具，用于从 Mac App Store 安装和管理应用程序。它提供了一个方便的接口，让你可以直接在终端中搜索、安装、更新和卸载通过 App Store 提供的应用。
+      # mas CLI用于从 Mac App Store 安装和管理应用。直接在终端中搜索、安装、更新和卸载通过 App Store 提供的应用。
       "mas"
     ];
 
     casks = lib.optionals (need_least "all") [
       # "shadowsocksx-ng"
-
       # AI app
       "yuanbao"
     ];
@@ -58,20 +59,16 @@
 
   home-manager.users.${username} = {
     programs.zsh.initContent = lib.mkIf (need_least "brewer") (
+      # Adjust how often this is run with `$HOMEBREW_AUTO_UPDATE_SECS` or disable with `$HOMEBREW_NO_AUTO_UPDATE=1`. Hide these hints with `$HOMEBREW_NO_ENV_HINTS=1` (see `man brew`).
       lib.mkBefore ''
         echo "# Initializing Homebrew environment for ${username}..."
         # 让 Homebrew 的环境变量生效
         if [[ -e /opt/homebrew/bin/brew ]]; then
           eval "$(/opt/homebrew/bin/brew shellenv)"
         fi
+        # 3600 * 24 * 7
+        export HOMEBREW_AUTO_UPDATE_SECS=604800
       ''
     );
-    #  ''
-    #     echo "# Initializing Homebrew environment for ${username}..."
-    #     # 让 Homebrew 的环境变量生效 (如果你通过 Homebrew 安装了某些工具，这一步很重要)
-    #     if [[ -e /opt/homebrew/bin/brew ]]; then
-    #       eval "$(/opt/homebrew/bin/brew shellenv zsh)"
-    #     fi
-    #   '';
   };
 }
