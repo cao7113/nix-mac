@@ -7,6 +7,10 @@
   ...
 }:
 {
+  imports = [
+    ./wireguard
+  ];
+
   homebrew = {
     # 1. 对应：brew tap teamookla/speedtest
     taps = [
@@ -23,19 +27,7 @@
   };
 
   # home-manager.users.${username} = {
-  #   programs.ghostty = {
-  #     enable = true;
-  #     package = null; # 👈 关键：不让 home-manager 安装主程序
-
-  #     settings = {
-  #       theme = "Catppuccin Mocha";
-  #       font-size = 14;
-  #       font-family = "JetBrainsMono Nerd Font";
-  #       background-opacity = 0.9;
-  #       background-blur = true;
-  #       # 完美匹配你用 Nix 管理的 Zsh/Fish
-  #       command = "${pkgs.zsh}/bin/zsh";
-  #     };
+  #   programs.xxx = {
   #   };
   # };
 

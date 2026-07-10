@@ -61,6 +61,14 @@ gh ssh add ~/.ssh/id_ed25519.pub
 
 - https://devenv.sh/getting-started/#3-configure-a-github-access-token-optional
 
+```
+mise WARN  GitHub rate limit exceeded. Resets at 2026-07-08 15:45:49 +08:00                  ◠
+mise WARN  GitHub API returned a 403 Forbidden error. This is most commonly caused by exceeding the rate limit, though other causes (e.g. insufficient token permissions) are possible.
+mise WARN  No GitHub token was found, so mise is making unauthenticated requests to GitHub which have a much lower rate limit.
+Create a token at https://github.com/settings/tokens (no scopes required) and set it as GITHUB_TOKEN in your environment.
+See https://mise.en.dev/dev-tools/github-tokens.html for all supported token sources (env vars, gh CLI, credential_command, etc.).
+```
+
 ### Proxy Settings
 
 If your network is unstable, use ShadowsocksNG:

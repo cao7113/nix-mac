@@ -9,6 +9,13 @@ Personal customized zsh config.
 dsh use [omz|ant|bare|play|dummy]
 ```
 
+## Help & Find Docs
+
+```
+man zshbuiltins
+man zshmisc
+```
+
 ## How it works?
 
 - `task setup`

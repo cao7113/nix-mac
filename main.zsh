@@ -84,6 +84,7 @@ source $nix_mac_home/darwin/main.zsh
 source $nix_mac_home/home/git.zsh
 source $nix_mac_home/home/dot-sec.zsh
 source $nix_mac_home/net/main.zsh
+source $nix_mac_home/brew/main.zsh
 source $nix_mac_home/tools/main.zsh
 
 # # The home-manager switch command performs a combined build and activation.

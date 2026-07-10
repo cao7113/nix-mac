@@ -2,6 +2,7 @@
 version: "3"
 
 tasks:
+
   ## Fly Machines
   # try with tmp ubuntu
   try: fly machine run --shell
@@ -13,9 +14,11 @@ tasks:
   v: |
     fly version
     ls -l $(which fly)
+
   setup: |
     brew install flyctl
     fly version
+
   up: |
     brew upgrade flyctl
     fly version

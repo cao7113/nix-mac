@@ -34,7 +34,14 @@ function net() {
 }
 
 source $net_rc_dir/proxy.zsh
-source $net_rc_dir/dns/rc.zsh
+# source $net_rc_dir/dns/rc.zsh
+# source $net_rc_dir/wireguard/rc.zsh
+if ((${+functions[source_dir_files]})); then
+	# DEBUG=1 DRY=1
+	DEPTH=1 source_dir_files
+else
+	print -P "%F{red}Error:%f 'source_dir_files' not found. Check zsh helpers!" >&2
+fi
 
 ## curl
 # 注意homebrew版本的curl和mac自带的/usr/bin/curl存在差异，如在使用系统证书，sslkeylog支持等
