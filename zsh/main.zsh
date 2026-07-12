@@ -14,7 +14,6 @@ if ((!${+_DSHRC_FILE})); then
 	source "${DSH_HOME}/alias.zsh"
 
 	## set path and fpath
-	path=("${DSH_HOME}/bin" $path)
 	fpath=("${DSH_HOME}/functions" $fpath)
 
 	# 开启扩展通配符

@@ -1,6 +1,31 @@
 ## Proxy helpers
 
 alias p="proxy"
+alias pt="proxy-test"
+
+function proxy-test() {
+	local act=$1
+	(($# > 0)) && shift
+
+	case "$act" in
+	g)
+		curl -vI https://www.google.com
+		;;
+	x)
+		curl -vI https://www.x.com
+		;;
+	gh)
+		curl -v -I https://github.com
+		;;
+	163)
+		curl -vI https://163.com
+		;;
+	*)
+		curl -v https://www.google.com
+		;;
+	esac
+}
+
 function proxy() {
 	local act=$1
 	(($# > 0)) && shift
@@ -24,11 +49,6 @@ function proxy() {
 		unset all_proxy
 		unset no_proxy
 		proxy info
-		;;
-	t | test)
-		set -x
-		curl -v https://www.google.com
-		set +x
 		;;
 	conf | cache)
 		proxy-cache "$@"
@@ -74,13 +94,13 @@ function proxy-cache() {
 	echo "Written $2 to $file" >&2
 }
 
-function sudop() {
-	local host=$(proxy-cache PROXY_HOST)
-	local port=$(proxy-cache PROXY_PORT)
-	local socks_port=$(proxy-cache PROXY_SOCKS_PORT)
-	if (($# == 0)); then
-		echo "sudo http_proxy=http://$host:$port https_proxy=http://$host:$port all_proxy=socks5h://$host:$socks_port"
-	else
-		sudo http_proxy=http://$host:$port https_proxy=http://$host:$port all_proxy=socks5h://$host:$socks_port "$@"
-	fi
-}
+# function sudop() {
+# 	local host=$(proxy-cache PROXY_HOST)
+# 	local port=$(proxy-cache PROXY_PORT)
+# 	local socks_port=$(proxy-cache PROXY_SOCKS_PORT)
+# 	if (($# == 0)); then
+# 		echo "sudo http_proxy=http://$host:$port https_proxy=http://$host:$port all_proxy=socks5h://$host:$socks_port"
+# 	else
+# 		sudo http_proxy=http://$host:$port https_proxy=http://$host:$port all_proxy=socks5h://$host:$socks_port "$@"
+# 	fi
+# }

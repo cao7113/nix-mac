@@ -27,7 +27,10 @@ function mac-agent() {
 		launchctl list | grep -v "com.apple"
 		;;
 	files)
-		ls -l ~/Library/LaunchAgents /Library/LaunchAgents
+		(
+			set -x
+			ls -l ~/Library/LaunchAgents /Library/LaunchAgents
+		)
 		;;
 	p | print)
 		if (($# == 0)); then

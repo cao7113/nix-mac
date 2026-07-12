@@ -1,0 +1,213 @@
+#!/bin/zsh
+
+AGENT_DIR="${HOME}/Library/LaunchAgents"
+DAEMON_DIR="/Library/LaunchDaemons"
+
+show_help() {
+	echo "🚀 Launchd 智能服务管理器 (lctl)"
+	echo "同时支持系统级守护进程 (Daemon) 和 用户级代理 (Agent)"
+	echo "--------------------------------------------------"
+	echo "用法:"
+	echo "  lctl add [-d|-a] [plist文件]      - 注册并启动一个服务"
+	echo "  lctl list                         - 查看自定义的服务状态"
+	echo "  lctl start/stop/remove [服务名]    - 启动/停止/移除服务（自动识别类型）"
+	echo "--------------------------------------------------"
+	echo "参数说明:"
+	echo "  -d, --daemon  强制作为系统级服务运行 (需要 sudo)"
+	echo "  -a, --agent   强制作为用户级服务运行 (不可用 sudo)"
+	echo "  (如果不指定参数，'add' 命令会根据你当前是否使用了 sudo 自动判断)"
+}
+
+# 自动识别当前环境的域和目标目录
+init_env() {
+	# 如果当前是 root 用户（通过 sudo 运行）
+	if [[ $EUID -eq 0 ]]; then
+		TARGET_DIR=$DAEMON_DIR
+		DOMAIN="system"
+		IS_DAEMON=true
+		# 如果是 sudo，我们需要拿到背后真实用户的 UID 供某些操作使用
+		REAL_UID=${SUDO_UID:-0}
+	else
+		TARGET_DIR=$AGENT_DIR
+		# 获取当前用户的 UID
+		local my_uid=$(id -u)
+		DOMAIN="gui/${my_uid}"
+		IS_DAEMON=false
+	fi
+}
+
+# 智能检测已存在服务所在的目录和域
+detect_service() {
+	local label=$1
+	local filename="${label}"
+	[[ "$filename" != *.plist ]] && filename="${label}.plist"
+
+	if [[ -f "${DAEMON_DIR}/${filename}" ]]; then
+		# 检测到是 Daemon，必须要求 root 权限
+		if [[ $EUID -ne 0 ]]; then
+			echo "❌ 错误: 该服务是系统级 Daemon，请在命令前加上 'sudo' 执行。"
+			exit 1
+		fi
+		TARGET_FILE="${DAEMON_DIR}/${filename}"
+		DOMAIN="system"
+		return 0
+	elif [[ -f "${AGENT_DIR}/${filename}" ]]; then
+		# 检测到是 Agent，不能用 root 权限
+		if [[ $EUID -eq 0 ]]; then
+			echo "❌ 错误: 该服务是用户级 Agent，请【不要】加 'sudo' 执行。"
+			exit 1
+		fi
+		TARGET_FILE="${AGENT_DIR}/${filename}"
+		local my_uid=$(id -u)
+		DOMAIN="gui/${my_uid}"
+		return 0
+	else
+		echo "❌ 错误: 在 Daemon 和 Agent 目录中均未找到服务 '${label}'"
+		exit 1
+	fi
+}
+
+# 安全提取 plist 的 Label
+get_plist_label() {
+	local label=$(plutil -extract Label raw "$1" 2>/dev/null)
+	[[ -z "$label" ]] && echo "$(basename "$1" .plist)" || echo "$label"
+}
+
+# 执行初始化
+init_env
+
+case "$1" in
+add)
+	# 解析 -d 或 -a 参数
+	shift
+	while [[ "$1" =~ ^- ]]; do
+		case "$1" in
+		-d | --daemon)
+			if [[ $EUID -ne 0 ]]; then
+				echo "❌ 错误: 安装 Daemon 服务必须使用 'sudo lctl add -d ...'"
+				exit 1
+			fi
+			TARGET_DIR=$DAEMON_DIR
+			DOMAIN="system"
+			IS_DAEMON=true
+			shift
+			;;
+		-a | --agent)
+			if [[ $EUID -eq 0 ]]; then
+				echo "❌ 错误: 安装 Agent 服务请勿使用 sudo"
+				exit 1
+			fi
+			TARGET_DIR=$AGENT_DIR
+			local my_uid=$(id -u)
+			DOMAIN="gui/${my_uid}"
+			IS_DAEMON=false
+			shift
+			;;
+		*)
+			echo "未知参数: $1"
+			show_help
+			exit 1
+			;;
+		esac
+	done
+
+	src_file=$1
+	if [[ -z "$src_file" || ! -f "$src_file" ]]; then
+		echo "❌ 错误: 请指定有效的 plist 文件路径。"
+		exit 1
+	fi
+
+	label=$(get_plist_label "$src_file")
+	dest_file="${TARGET_DIR}/${label}.plist"
+
+	echo "📦 正在复制到目标目录: $dest_file"
+	cp "$src_file" "$dest_file"
+
+	if [ "$IS_DAEMON" = true ]; then
+		echo "🔐 正在修复系统级权限 (root:wheel, 644)..."
+		chown root:wheel "$dest_file"
+		chmod 644 "$dest_file"
+	else
+		echo "🔐 正在修复用户级权限 (644)..."
+		chmod 644 "$dest_file"
+	fi
+
+	echo "🚀 正在载入并启动服务 [Domain: ${DOMAIN}]..."
+	if launchctl bootstrap "$DOMAIN" "$dest_file" 2>/dev/null; then
+		echo "✅ 成功! 服务 '${label}' 已成功注入并启动。"
+	else
+		echo "❌ 启动失败，可能该服务已在运行。请尝试 'lctl stop ${label}' 后重试。"
+	fi
+	;;
+
+list)
+	echo -e "PID\tSTATUS\tTYPE\tSERVICE LABEL"
+	echo "------------------------------------------------------------"
+
+	# 1. 读取用户级 Agent (当前用户)
+	local my_uid=$(id -u)
+	if [[ $EUID -ne 0 ]]; then
+		launchctl list | grep -E "com\.|homebrew" | while read -r pid status label; do
+			printf "%-8s%-8s%-8s%s\n" "$pid" "$status" "Agent" "$label"
+		done
+	fi
+
+	# 2. 读取系统级 Daemon (如果是 root 或者有权限读取)
+	if [[ $EUID -eq 0 ]]; then
+		launchctl list | grep -E "com\.|homebrew" | while read -r pid status label; do
+			printf "%-8s%-8s%-8s%s\n" "$pid" "$status" "Daemon" "$label"
+		done
+	fi
+	;;
+
+stop)
+	[[ -z "$2" ]] && {
+		echo "❌ 错误: 请指定服务名。"
+		exit 1
+	}
+	detect_service "$2"
+	echo "🛑 正在停止服务 [Domain: ${DOMAIN}]..."
+	if launchctl bootout "$DOMAIN" "$TARGET_FILE" 2>/dev/null; then
+		echo "✅ 服务已成功停止并卸载。"
+	else
+		echo "❌ 停止失败或服务本就未运行。"
+	fi
+	;;
+
+start)
+	[[ -z "$2" ]] && {
+		echo "❌ 错误: 请指定服务名。"
+		exit 1
+	}
+	detect_service "$2"
+	echo "🚀 正在启动服务 [Domain: ${DOMAIN}]..."
+	if launchctl bootstrap "$DOMAIN" "$TARGET_FILE" 2>/dev/null; then
+		echo "✅ 服务已成功重新启动。"
+	else
+		echo "❌ 启动失败。"
+	fi
+	;;
+
+remove)
+	[[ -z "$2" ]] && {
+		echo "❌ 错误: 请指定服务名。"
+		exit 1
+	}
+	detect_service "$2"
+	echo "🛑 正在停止服务..."
+	launchctl bootout "$DOMAIN" "$TARGET_FILE" 2>/dev/null
+	echo "🗑️ 正在删除 plist 配置文件..."
+	rm "$TARGET_FILE"
+	echo "✨ 服务已彻底从系统移除。"
+	;;
+
+help | --help | -h | "")
+	show_help
+	;;
+
+*)
+	echo "❌ 未知命令: $1"
+	show_help
+	exit 1
+	;;
+esac

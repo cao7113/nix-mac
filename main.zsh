@@ -77,6 +77,8 @@ if [[ -z "$nix_mac_home" ]]; then
 	export nix_mac_home=$(nix-mac home)
 fi
 
+path=("${nix_mac_home}/bin" $path)
+
 DSH_PROFILE_ID="dummy" source "$nix_mac_home/zsh/main.zsh"
 source $nix_mac_home/nix/main.zsh
 source $nix_mac_home/darwin/main.zsh
