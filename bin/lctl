@@ -1,49 +1,90 @@
 #!/bin/zsh
 
-AGENT_DIR="${HOME}/Library/LaunchAgents"
-DAEMON_DIR="/Library/LaunchDaemons"
+# ==============================================================================
+# 🚀 Launchd 智能服务管理器 (lctl)
+#
+# 设计原则：
+# 1. 默认操作用户图形域 (gui/<uid>)。
+# 2. 显式使用全局 -u / --user 选项切换为用户后台域 (user/<uid>)。
+# 3. 显式使用 sudo 操作系统级守护进程 (system)。
+# ==============================================================================
 
-show_help() {
-	echo "🚀 Launchd 智能服务管理器 (lctl)"
-	echo "同时支持系统级守护进程 (Daemon) 和 用户级代理 (Agent)"
-	echo "--------------------------------------------------"
-	echo "用法:"
-	echo "  lctl add [-d|-a] [plist文件]      - 注册并启动一个服务"
-	echo "  lctl list                         - 查看自定义的服务状态"
-	echo "  lctl start/stop/remove [服务名]    - 启动/停止/移除服务（自动识别类型）"
-	echo "--------------------------------------------------"
-	echo "参数说明:"
-	echo "  -d, --daemon  强制作为系统级服务运行 (需要 sudo)"
-	echo "  -a, --agent   强制作为用户级服务运行 (不可用 sudo)"
-	echo "  (如果不指定参数，'add' 命令会根据你当前是否使用了 sudo 自动判断)"
+# 全局常量定义
+readonly AGENT_DIR="${HOME}/Library/LaunchAgents"
+readonly DAEMON_DIR="/Library/LaunchDaemons"
+readonly GLOBAL_AGENT_DIR="/Library/LaunchAgents"
+readonly SYS_AGENT_DIR="/System/Library/LaunchAgents" # 暂不支持哦！
+readonly SYS_DAEMON_DIR="/System/Library/LaunchDaemons"
+
+# 用户指定的运行模式：默认为 gui 域
+AGENT_SUB_DOMAIN="gui"
+
+# 全局状态变量（由 init_env 动态赋值）
+TARGET_DIR=""
+DOMAIN=""
+IS_DAEMON=false
+REAL_UID=0
+
+function show_help() {
+	local C_GREEN="\033[32m"
+	local C_CYAN="\033[36m"
+	local C_YELLOW="\033[33m"
+	local C_GRAY="\033[90m"
+	local C_RESET="\033[0m"
+
+	echo -e "${C_GREEN}🚀 Launchd 智能服务管理器 (lctl)${C_RESET}"
+	echo -e "同时支持系统级守护进程 (Daemon) 和 用户级代理 (Agent: gui域 / user域)"
+	echo -e "Usage$> lctl [global-opts] <sub-command> [sub-opts]"
+	echo -e "${C_GRAY}----------------------------------------------------------------------${C_RESET}"
+	echo -e "全局控制选项:"
+	echo -e "  -u, --user                        ${C_YELLOW}切换目标域为无头后台域 (user/<uid>)，默认为 gui 域${C_RESET}"
+	echo -e "${C_GRAY}----------------------------------------------------------------------${C_RESET}"
+	echo -e "用法 (基础子命令):"
+	echo -e "  lctl a, add [plist文件]   				 ${C_CYAN}# 注册并启动一个服务${C_RESET}"
+	echo -e "  lctl l, list [选项]               ${C_CYAN}# 查看当前注入的服务状态${C_RESET}"
+	echo -e "  lctl p, print [Service Label]     ${C_CYAN}# print服务信息${C_RESET}"
+	echo -e "  lctl v, view [Service Label]      ${C_CYAN}# 查看指定服务的详细状态与路径${C_RESET}"
+	echo -e "  lctl c, cat [Service Label]       ${C_CYAN}# 查看指定服务的 plist 配置文件内容${C_RESET}"
+	echo -e "  lctl up, start [Service Label]    ${C_CYAN}# 启动服务（根据文件位置自动识别）${C_RESET}"
+	echo -e "  lctl down, stop [Service Label]   ${C_CYAN}# 停止服务（根据文件位置自动识别）${C_RESET}"
+	echo -e "  lctl reup, restart [Service Label]${C_CYAN}# 重启服务（根据文件位置自动识别）${C_RESET}"
+	echo -e "  lctl rm, remove [Service Label]   ${C_CYAN}# 彻底移除服务（并删除配置文件）${C_RESET}"
+	echo -e "  lctl f, files                     ${C_CYAN}# 查看 launchd 服务的文件列表${C_RESET}"
+	echo -e "  lctl paths                        ${C_CYAN}# 查看 launchd 服务的各个标准系统路径${C_RESET}"
+	echo -e "  lctl x|exec                       ${C_CYAN}# 运行其它launchctl命令{C_RESET}"
+	echo -e "${C_GRAY}----------------------------------------------------------------------${C_RESET}"
+	echo -e "🔍 [list] 命令专属选项:"
+	echo -e "  -a, --all                         ${C_YELLOW}查看所有服务 (真正的全量数据，包含苹果原生)${C_RESET}"
+	echo -e "  -o, --only-apple                  ${C_YELLOW}仅查看 Apple 官方的原生系统服务${C_RESET}"
+	echo -e "  ${C_GRAY}*(注: list 命令会根据你是否加 sudo，自动切换查看系统级/用户级列表)*${C_RESET}"
 }
 
 # 自动识别当前环境的域和目标目录
-init_env() {
-	# 如果当前是 root 用户（通过 sudo 运行）
+function init_env() {
 	if [[ $EUID -eq 0 ]]; then
 		TARGET_DIR=$DAEMON_DIR
 		DOMAIN="system"
 		IS_DAEMON=true
-		# 如果是 sudo，我们需要拿到背后真实用户的 UID 供某些操作使用
 		REAL_UID=${SUDO_UID:-0}
 	else
+		local my_uid
+		my_uid=$(id -u)
+
 		TARGET_DIR=$AGENT_DIR
-		# 获取当前用户的 UID
-		local my_uid=$(id -u)
-		DOMAIN="gui/${my_uid}"
+		DOMAIN="${AGENT_SUB_DOMAIN}/${my_uid}"
 		IS_DAEMON=false
 	fi
 }
 
 # 智能检测已存在服务所在的目录和域
-detect_service() {
+# 尊重原设计：只进行物理文件路径锁定，Domain 严格遵循命令行参数设定，不猜测 plist 内容
+function detect_service() {
 	local label=$1
+	local soft_mode=${2:-false}
 	local filename="${label}"
 	[[ "$filename" != *.plist ]] && filename="${label}.plist"
 
 	if [[ -f "${DAEMON_DIR}/${filename}" ]]; then
-		# 检测到是 Daemon，必须要求 root 权限
 		if [[ $EUID -ne 0 ]]; then
 			echo "❌ 错误: 该服务是系统级 Daemon，请在命令前加上 'sudo' 执行。"
 			exit 1
@@ -52,71 +93,235 @@ detect_service() {
 		DOMAIN="system"
 		return 0
 	elif [[ -f "${AGENT_DIR}/${filename}" ]]; then
-		# 检测到是 Agent，不能用 root 权限
 		if [[ $EUID -eq 0 ]]; then
 			echo "❌ 错误: 该服务是用户级 Agent，请【不要】加 'sudo' 执行。"
 			exit 1
 		fi
 		TARGET_FILE="${AGENT_DIR}/${filename}"
-		local my_uid=$(id -u)
-		DOMAIN="gui/${my_uid}"
+		return 0
+	elif [[ -f "${SYS_AGENT_DIR}/${filename}" ]]; then
+		TARGET_FILE="${SYS_AGENT_DIR}/${filename}"
+		return 0
+	elif [[ -f "${SYS_DAEMON_DIR}/${filename}" ]]; then
+		TARGET_FILE="${SYS_DAEMON_DIR}/${filename}"
+		DOMAIN="system"
 		return 0
 	else
-		echo "❌ 错误: 在 Daemon 和 Agent 目录中均未找到服务 '${label}'"
+		if [[ "$soft_mode" == "true" ]]; then
+			TARGET_FILE=""
+			return 1
+		fi
+		echo "❌ 错误: 在所有的 Daemon 和 Agent 目录中均未找到 Service Label 为 '${label}' 的 plist 文件"
 		exit 1
 	fi
 }
 
 # 安全提取 plist 的 Label
-get_plist_label() {
-	local label=$(plutil -extract Label raw "$1" 2>/dev/null)
+function get_plist_label() {
+	local label
+	label=$(plutil -extract Label raw "$1" 2>/dev/null)
 	[[ -z "$label" ]] && echo "$(basename "$1" .plist)" || echo "$label"
 }
 
-# 执行初始化
-init_env
+# ----- 子命令函数实现 -----
 
-case "$1" in
-add)
-	# 解析 -d 或 -a 参数
-	shift
+function cmd_paths() {
+	local C_CYAN="\033[36m"
+	local C_RESET="\033[0m"
+
+	echo "# Service Paths:"
+	printf "%-15s = %b%s%b\n" "AGENT_DIR" "$C_CYAN" "$AGENT_DIR" "$C_RESET"
+	printf "%-15s = %b%s%b\n" "GLOBAL_AGENT_DIR" "$C_CYAN" "$GLOBAL_AGENT_DIR" "$C_RESET"
+	printf "%-15s = %b%s%b\n" "SYS_AGENT_DIR" "$C_CYAN" "$SYS_AGENT_DIR" "$C_RESET"
+	echo
+	printf "%-15s = %b%s%b\n" "DAEMON_DIR" "$C_CYAN" "$DAEMON_DIR" "$C_RESET"
+	printf "%-15s = %b%s%b\n" "SYS_DAEMON_DIR" "$C_CYAN" "$SYS_DAEMON_DIR" "$C_RESET"
+}
+
+function cmd_files() {
+	if [ "$IS_DAEMON" = true ]; then
+		echo "# Daemon files (Skip $SYS_DAEMON_DIR)"
+		(
+			set -x
+			ls -l $DAEMON_DIR
+		)
+	else
+		echo "# Agent files (Skip $SYS_AGENT_DIR)"
+		(
+			set -x
+			ls -l $AGENT_DIR
+			echo
+			ls -l $GLOBAL_AGENT_DIR
+		)
+	fi
+}
+
+function cmd_list() {
+	local view_mode="default"
+
 	while [[ "$1" =~ ^- ]]; do
 		case "$1" in
-		-d | --daemon)
-			if [[ $EUID -ne 0 ]]; then
-				echo "❌ 错误: 安装 Daemon 服务必须使用 'sudo lctl add -d ...'"
-				exit 1
-			fi
-			TARGET_DIR=$DAEMON_DIR
-			DOMAIN="system"
-			IS_DAEMON=true
+		-a | --all)
+			view_mode="all"
 			shift
 			;;
-		-a | --agent)
-			if [[ $EUID -eq 0 ]]; then
-				echo "❌ 错误: 安装 Agent 服务请勿使用 sudo"
-				exit 1
-			fi
-			TARGET_DIR=$AGENT_DIR
-			local my_uid=$(id -u)
-			DOMAIN="gui/${my_uid}"
-			IS_DAEMON=false
+		-o | --only-apple)
+			view_mode="only-apple"
 			shift
 			;;
 		*)
-			echo "未知参数: $1"
-			show_help
+			echo "❌ 未知参数: $1"
+			echo "用法: lctl list [-a | --all] [-o | --only-apple]"
 			exit 1
 			;;
 		esac
 	done
 
-	src_file=$1
+	# - `launchctl list` 输出的每一行通常是：
+	#   ```
+	#   PID     Status  Label
+	#   ```
+	# - PID 为“-”表示当前没有进程在运行，Status 为退出码或 0。
+	# 如果服务正在运行，`PID` 字段会显示进程号，`Status` 通常为 0
+	# 如果服务没有运行，`PID` 字段为 `-`，`Status` 显示的是**上一次退出时的状态码**
+	# 比如只看正在运行（PID 不为“-”）的服务：
+	# launchctl list | awk '$1 != "-"'
+
+	echo "PID     STATUS  TYPE    SERVICE LABEL"
+	echo "------------------------------------------------------------"
+
+	function _filter_and_print() {
+		local type_label=$1
+		local raw_list
+		raw_list=$(launchctl list)
+
+		case "$view_mode" in
+		all)
+			echo "$raw_list"
+			;;
+		only-apple)
+			echo "$raw_list" | grep "com.apple."
+			;;
+		default | *)
+			echo "$raw_list" | grep -v "com.apple."
+			;;
+		esac | while read -r pid stat label; do
+			[[ "$pid" == "PID" ]] && continue
+			printf "%-8s%-8s%-8s%s\n" "$pid" "$stat" "$type_label" "$label"
+		done
+	}
+
+	if [[ $EUID -ne 0 ]]; then
+		_filter_and_print "Agent"
+	fi
+
+	if [[ $EUID -eq 0 ]]; then
+		_filter_and_print "Daemon"
+	fi
+}
+
+function cmd_view() {
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
+		exit 1
+	fi
+
+	detect_service "$label" true
+	local detect_status=$?
+
+	echo "📋 服务详细信息 [$label]"
+	echo "------------------------------------------------------------"
+	echo "Service Label : $label"
+	if [[ $detect_status -eq 0 ]]; then
+		echo "Domain        : $DOMAIN"
+		echo "Plist Path    : $TARGET_FILE"
+	else
+		echo "Domain        : 自动识别 (系统或隐式常驻服务)"
+		echo "Plist Path    : 未能在已知标准目录中找到该 .plist 文件"
+	fi
+
+	local svc_info
+	svc_info=$(launchctl list | grep -F "$label")
+
+	if [[ -n "$svc_info" ]]; then
+		local pid stat_code
+		read -r pid stat_code _ <<<"$svc_info"
+		echo "Current PID   : $pid"
+		echo "Exit Status   : $stat_code"
+	else
+		echo "Current PID   : - (服务当前未运行或未正常注入)"
+		echo "Exit Status   : -"
+	fi
+	echo "------------------------------------------------------------"
+}
+
+function cmd_print() {
+	local label=$1
+	launchctl print $DOMAIN/$label
+	# launchctl print $DOMAIN/$label | grep -E "pid =|status =|state ="
+}
+
+function cmd_cat() {
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
+		exit 1
+	fi
+
+	detect_service "$label" false
+
+	echo "📄 配置文件内容: $TARGET_FILE"
+	echo "============================================================"
+	cat "$TARGET_FILE"
+	echo -e "\n============================================================"
+}
+
+function cmd_json() {
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
+		exit 1
+	fi
+
+	detect_service "$label" false
+
+	echo "📄 配置文件内容: $TARGET_FILE as JSON"
+	echo "============================================================"
+	plutil -convert json -o - "$TARGET_FILE" | jq
+	echo -e "\n============================================================"
+}
+
+function cmd_log() {
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
+		echo "用法: lctl log [Service Label] [额外选项...，如 --last 10m]"
+		exit 1
+	fi
+	shift # 剥离掉第一个参数(Label)
+
+	echo "🔎 正在查询 launchd (PID 1) 中关于 '${label}' 的日志..."
+	echo "------------------------------------------------------------"
+
+	# 直接执行 log show，默认加上调试级别，后面的 $@ 把你输入的其它参数原封不动传过去
+	command log show \
+		--predicate "processID == 1 AND eventMessage CONTAINS \"${label}\"" \
+		--debug \
+		--info \
+		--last 5m \
+		--style compact \
+		"$@"
+}
+
+function cmd_add() {
+	local src_file=$1
 	if [[ -z "$src_file" || ! -f "$src_file" ]]; then
 		echo "❌ 错误: 请指定有效的 plist 文件路径。"
 		exit 1
 	fi
 
+	local label dest_file
 	label=$(get_plist_label "$src_file")
 	dest_file="${TARGET_DIR}/${label}.plist"
 
@@ -138,76 +343,198 @@ add)
 	else
 		echo "❌ 启动失败，可能该服务已在运行。请尝试 'lctl stop ${label}' 后重试。"
 	fi
-	;;
+}
 
-list)
-	echo -e "PID\tSTATUS\tTYPE\tSERVICE LABEL"
-	echo "------------------------------------------------------------"
-
-	# 1. 读取用户级 Agent (当前用户)
-	local my_uid=$(id -u)
-	if [[ $EUID -ne 0 ]]; then
-		launchctl list | grep -E "com\.|homebrew" | while read -r pid status label; do
-			printf "%-8s%-8s%-8s%s\n" "$pid" "$status" "Agent" "$label"
-		done
-	fi
-
-	# 2. 读取系统级 Daemon (如果是 root 或者有权限读取)
-	if [[ $EUID -eq 0 ]]; then
-		launchctl list | grep -E "com\.|homebrew" | while read -r pid status label; do
-			printf "%-8s%-8s%-8s%s\n" "$pid" "$status" "Daemon" "$label"
-		done
-	fi
-	;;
-
-stop)
-	[[ -z "$2" ]] && {
-		echo "❌ 错误: 请指定服务名。"
+function cmd_remove() {
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
 		exit 1
-	}
-	detect_service "$2"
-	echo "🛑 正在停止服务 [Domain: ${DOMAIN}]..."
-	if launchctl bootout "$DOMAIN" "$TARGET_FILE" 2>/dev/null; then
-		echo "✅ 服务已成功停止并卸载。"
-	else
-		echo "❌ 停止失败或服务本就未运行。"
 	fi
-	;;
 
-start)
-	[[ -z "$2" ]] && {
-		echo "❌ 错误: 请指定服务名。"
+	# launchctl remove 和 load/unload类似，是旧版命令
+	# bootout是同步操作，remove是异步的，推荐直接使用bootout！
+	detect_service "$label"
+	echo "🛑 正在停止服务 $DOMAIN/$label..."
+	launchctl bootout "$DOMAIN" "$TARGET_FILE" 2>/dev/null
+	echo "🗑️ 正在删除 plist 配置文件: $TARGET_FILE from DOMAIN: $DOMAIN ..."
+	rm "$TARGET_FILE"
+	echo "✨ 服务 $DOMAIN/$label 已彻底从系统移除。"
+}
+
+function cmd_start() {
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
 		exit 1
-	}
-	detect_service "$2"
+	fi
+
+	detect_service "$label"
 	echo "🚀 正在启动服务 [Domain: ${DOMAIN}]..."
 	if launchctl bootstrap "$DOMAIN" "$TARGET_FILE" 2>/dev/null; then
 		echo "✅ 服务已成功重新启动。"
 	else
 		echo "❌ 启动失败。"
 	fi
-	;;
+}
 
-remove)
-	[[ -z "$2" ]] && {
-		echo "❌ 错误: 请指定服务名。"
+function cmd_stop() {
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
 		exit 1
-	}
-	detect_service "$2"
-	echo "🛑 正在停止服务..."
-	launchctl bootout "$DOMAIN" "$TARGET_FILE" 2>/dev/null
-	echo "🗑️ 正在删除 plist 配置文件..."
-	rm "$TARGET_FILE"
-	echo "✨ 服务已彻底从系统移除。"
-	;;
+	fi
 
-help | --help | -h | "")
-	show_help
-	;;
+	detect_service "$label"
+	echo "🛑 正在停止服务 [Domain: ${DOMAIN}](从内存移除service)..."
+	if launchctl bootout "$DOMAIN" "$TARGET_FILE" 2>/dev/null; then
+		echo "✅ 服务已成功停止并卸载。"
+	else
+		echo "❌ 停止失败或服务本就未运行。"
+	fi
+}
 
-*)
-	echo "❌ 未知命令: $1"
-	show_help
-	exit 1
-	;;
-esac
+function cmd_kill() {
+	local signal=$1
+	if [[ -z "$signal" ]]; then
+		echo "❌ 错误: 请指定 Signal。"
+		exit 1
+	fi
+	shift
+
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
+		exit 2
+	fi
+	shift
+
+	launchctl kill $signal ${DOMAIN}/$label "$@"
+
+	# # 强制杀死当前用户 GUI 域下的指定服务
+	# launchctl kill SIGKILL gui/501/com.example.helper
+	# # 向服务发送挂起信号（通常用于让服务重新加载配置文件）
+	# launchctl kill SIGHUP gui/501/com.example.helper
+}
+
+# 强制触发/立刻执行任务
+# 有时候你的 .plist 设置了每隔一小时运行，但你想现在立刻测试它是否能跑通
+# launchctl kickstart -k 参数表示如果任务正在跑，先杀掉它再重启（类似 restart）
+function cmd_restart() {
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
+		exit 1
+	fi
+
+	detect_service "$label"
+	echo "🛑 正在停止服务 [Domain: ${DOMAIN}]..."
+	if launchctl kickstart -k "$DOMAIN/$label" 2>/dev/null; then
+		echo "✅ 服务已重启。"
+	else
+		echo "❌ 重启失败。"
+	fi
+}
+
+# ----- 主入口函数 -----
+
+function main() {
+	# 定义一个 Zsh 局部数组，用来存放过滤掉全局选项后的纯子命令和参数
+	local -a passthrough_args=()
+
+	# 遍历所有传入的参数，不考虑位置
+	while (($# > 0)); do
+		case "$1" in
+		-u | --user)
+			AGENT_SUB_DOMAIN="user"
+			shift
+			;;
+		-*)
+			# 捕获其他所有以 - 开头的选项
+			# 1. 允许它们通过，交给后面的子命令去处理（例如 list -a，或 add -d）
+			# 2. 如果你在全局遇到完全不认识的且子命令也不需要的选项，也可以在这里拦截
+			passthrough_args+=("$1")
+			shift
+			;;
+		*)
+			# 遇到非选项参数（如子命令名、Label、文件路径等），存入临时数组
+			passthrough_args+=("$1")
+			shift
+			;;
+		esac
+	done
+
+	# 将过滤后的参数重新赋给标准位置参数 $1, $2, ...
+	set -- "${passthrough_args[@]}"
+
+	# 初始化运行环境域（结合全局参数）
+	init_env
+
+	echo "DEBUG: DOMAIN: $DOMAIN TARGET_DIR: $TARGET_DIR TARGET_FILE: $TARGET_FILE"
+
+	local act=$1
+	(($# > 0)) && shift
+
+	case "$act" in
+	l | list)
+		cmd_list "$@"
+		;;
+	p | print)
+		cmd_print "$@"
+		;;
+	v | view)
+		cmd_view "$@"
+		;;
+	c | cat)
+		cmd_cat "$@"
+		;;
+	j | json)
+		cmd_json "$@"
+		;;
+	a | add)
+		cmd_add "$@"
+		;;
+	rm | del | remove)
+		cmd_remove "$@"
+		;;
+	up | start)
+		cmd_start "$@"
+		;;
+	down | stop)
+		cmd_stop "$@"
+		;;
+	reup | restart)
+		cmd_restart "$@"
+		;;
+	kill)
+		cmd_kill "$@"
+		;;
+	log)
+		cmd_log "$@"
+		;;
+	f | files)
+		cmd_files "$@"
+		;;
+	paths)
+		cmd_paths "$@"
+		;;
+	h | help | --help | -h | "")
+		show_help
+		;;
+	x | exec)
+		exec launchctl "$@"
+		# disable/enable some.job
+		;;
+	domain)
+		local pid=${1:-1}
+		launchctl dumpstate | grep -B 8 "pid = $pid" | grep "domain ="
+		;;
+	*)
+		echo "❌ 未知命令: $act"
+		show_help
+		exit 1
+		;;
+	esac
+}
+
+main "$@"

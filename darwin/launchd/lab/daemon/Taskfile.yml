@@ -1,0 +1,16 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: echo hi daemon!
+  
+  log: |
+    tail -f /tmp/test_daemon*.log
+
+  ulog: |
+    log show --predicate 'processID == 1 AND eventMessage CONTAINS "lab.daemon"' --last 10m --debug --info
+
+  setup: |
+    sudo ln -snf "{{.TASKFILE_DIR}}/test.sh" /usr/local/bin/test-daemon.sh
+    sudo lctl add ./lab.daemon.plist
+  

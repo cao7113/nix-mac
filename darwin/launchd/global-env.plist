@@ -4,6 +4,7 @@
 <dict>
     <key>Label</key>
     <string>com.user.setenv</string>
+
     <key>ProgramArguments</key>
     <array>
         <!-- 提示：如果需要设置多个全局变量，由于 ProgramArguments 只能执行单一命令，你可以将 launchctl setenv VAR VALUE 写入一个单独的 .sh 脚本中，然后在此 .plist 中调用该脚本 -->
@@ -12,6 +13,7 @@
         <string>MY_GLOBAL_VAR</string>
         <string>global_value_here</string>
     </array>
+    
     <key>RunAtLoad</key>
     <true/>
 </dict>

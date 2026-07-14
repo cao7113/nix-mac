@@ -43,7 +43,7 @@
   imports = [
     ./defaults.nix
     ./pkgs.nix
-    # launchd/test.nix
+    # launchd/daemons/test.nix
   ];
 
   programs.zsh.enable = true;

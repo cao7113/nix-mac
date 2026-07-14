@@ -1,0 +1,17 @@
+#!/bin/zsh
+# run with sudo or not
+set -eo pipefail
+
+echo "# Inspect uids"
+cat <<-EOF
+	RUID=$RUID
+	UID=$UID
+	EUID=$EUID
+	SUID=$SUID
+	SUDO_USER=$SUDO_USER
+	SUDO_UID=$SUDO_UID
+EOF
+
+# user id & groups
+# - **staff**：普通用户组，绝大多数用户都属于它。
+# - **wheel**：超级用户组，只有 root 和部分管理员属于它，权限更高。

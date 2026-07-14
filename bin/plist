@@ -1,0 +1,24 @@
+#!/bin/zsh
+set -euo pipefail
+
+## plist: property list
+# show plist as json for readability
+function pljson() {
+	(($# == 0)) && echo "Require plist file path!" && return 1
+	local plfile="$1"
+	[[ -f $plfile ]] || {
+		echo "Invalid plist file: $plfile"
+		return 2
+	}
+	plutil -convert json -o - $plfile | jq
+}
+
+# function plyaml() {
+# 	(($# == 0)) && echo "Require plist file path!" && return 1
+# 	local plfile="$1"
+# 	[[ -f $plfile ]] || {
+# 		echo "Invalid plist file: $plfile"
+# 		return 2
+# 	}
+# 	plutil -convert json -o - $plfile | yq -p json -o yaml
+# }
