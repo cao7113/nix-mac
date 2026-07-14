@@ -24,6 +24,7 @@ TARGET_DIR=""
 DOMAIN=""
 IS_DAEMON=false
 REAL_UID=0
+VERBOSE=false
 
 function show_help() {
 	local C_GREEN="\033[32m"
@@ -38,6 +39,7 @@ function show_help() {
 	echo -e "${C_GRAY}----------------------------------------------------------------------${C_RESET}"
 	echo -e "全局控制选项:"
 	echo -e "  -u, --user                        ${C_YELLOW}切换目标域为无头后台域 (user/<uid>)，默认为 gui 域${C_RESET}"
+	echo -e "  -V, --verbose                     ${C_YELLOW}Verbose mode{C_RESET}"
 	echo -e "${C_GRAY}----------------------------------------------------------------------${C_RESET}"
 	echo -e "用法 (基础子命令):"
 	echo -e "  lctl a, add [plist文件]   				 ${C_CYAN}# 注册并启动一个服务${C_RESET}"
@@ -47,7 +49,9 @@ function show_help() {
 	echo -e "  lctl c, cat [Service Label]       ${C_CYAN}# 查看指定服务的 plist 配置文件内容${C_RESET}"
 	echo -e "  lctl up, start [Service Label]    ${C_CYAN}# 启动服务（根据文件位置自动识别）${C_RESET}"
 	echo -e "  lctl down, stop [Service Label]   ${C_CYAN}# 停止服务（根据文件位置自动识别）${C_RESET}"
-	echo -e "  lctl reup, restart [Service Label]${C_CYAN}# 重启服务（根据文件位置自动识别）${C_RESET}"
+	echo -e "  lctl reup, restart [Service Label]${C_CYAN}# 重启服务进程（根据文件位置自动识别）${C_RESET}"
+	echo -e "  lctl reload [Service Label].      ${C_CYAN}# 重载plist文件${C_RESET}"
+	echo -e "  lctl readd [Service Label].       ${C_CYAN}# 重新添加plist${C_RESET}"
 	echo -e "  lctl rm, remove [Service Label]   ${C_CYAN}# 彻底移除服务（并删除配置文件）${C_RESET}"
 	echo -e "  lctl f, files                     ${C_CYAN}# 查看 launchd 服务的文件列表${C_RESET}"
 	echo -e "  lctl paths                        ${C_CYAN}# 查看 launchd 服务的各个标准系统路径${C_RESET}"
@@ -362,6 +366,22 @@ function cmd_remove() {
 	echo "✨ 服务 $DOMAIN/$label 已彻底从系统移除。"
 }
 
+function cmd_readd() {
+	local src_file=$1
+	if [[ -z "$src_file" || ! -f "$src_file" ]]; then
+		echo "❌ 错误: 请指定有效的 plist 文件路径。"
+		exit 1
+	fi
+
+	local label dest_file
+	label=${2:-$(get_plist_label "$src_file")}
+
+	echo "Remove service label: $label and readd file: $src_file"
+
+	cmd_remove $label
+	cmd_add $src_file
+}
+
 function cmd_start() {
 	local label=$1
 	if [[ -z "$label" ]]; then
@@ -436,6 +456,28 @@ function cmd_restart() {
 	fi
 }
 
+function cmd_reload() {
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
+		exit 1
+	fi
+
+	cmd_stop $label
+	cmd_start $label
+}
+
+function cmd_domain_of() {
+	local pid=$1
+	if [[ -z "$pid" ]]; then
+		echo "❌ 错误: 请指定 PID。"
+		exit 1
+	fi
+
+	local pid=${1}
+	launchctl dumpstate | grep -B 8 "pid = $pid" | grep "domain ="
+}
+
 # ----- 主入口函数 -----
 
 function main() {
@@ -447,6 +489,10 @@ function main() {
 		case "$1" in
 		-u | --user)
 			AGENT_SUB_DOMAIN="user"
+			shift
+			;;
+		-V | --verbose)
+			VERBOSE=true
 			shift
 			;;
 		-*)
@@ -470,7 +516,9 @@ function main() {
 	# 初始化运行环境域（结合全局参数）
 	init_env
 
-	echo "DEBUG: DOMAIN: $DOMAIN TARGET_DIR: $TARGET_DIR TARGET_FILE: $TARGET_FILE"
+	if [[ "$VERBOSE" == "true" ]]; then
+		echo "DEBUG: DOMAIN: $DOMAIN TARGET_DIR: $TARGET_DIR TARGET_FILE: $TARGET_FILE"
+	fi
 
 	local act=$1
 	(($# > 0)) && shift
@@ -506,6 +554,12 @@ function main() {
 	reup | restart)
 		cmd_restart "$@"
 		;;
+	reload)
+		cmd_reload "$@"
+		;;
+	readd)
+		cmd_readd "$@"
+		;;
 	kill)
 		cmd_kill "$@"
 		;;
@@ -525,9 +579,8 @@ function main() {
 		exec launchctl "$@"
 		# disable/enable some.job
 		;;
-	domain)
-		local pid=${1:-1}
-		launchctl dumpstate | grep -B 8 "pid = $pid" | grep "domain ="
+	dom | domain)
+		cmd_domain_of "$@"
 		;;
 	*)
 		echo "❌ 未知命令: $act"
