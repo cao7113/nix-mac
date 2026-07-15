@@ -399,7 +399,7 @@ function cmd_remove() {
 	# bootout是同步操作，旧版launchctl remove是异步的
 	launchctl bootout "$DOMAIN" "$TARGET_FILE" 2>/dev/null
 	echo "🗑️ 正在删除 plist 配置文件: $TARGET_FILE from DOMAIN: $DOMAIN ..."
-	rm "$TARGET_FILE"
+	rm -i "$TARGET_FILE"
 	echo "✨ 服务 $DOMAIN/$label 已彻底从系统移除。"
 }
 
@@ -644,7 +644,7 @@ function main() {
 	a | add)
 		cmd_add "$@"
 		;;
-	rm | del | remove)
+	purge | rm | del | remove)
 		cmd_remove "$@"
 		;;
 	up | start)

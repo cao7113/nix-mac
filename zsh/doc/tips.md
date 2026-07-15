@@ -9,3 +9,5 @@ if (( $+commands[git] )); then
     echo "git 存在"
 fi
 ```
+
+- use trash instead rm in daily ops?

@@ -3,7 +3,7 @@
 # - keep this simple and MINI!
 
 alias e="exit"
-alias l="ls -lah"
+alias l="ls -laah"
 alias cmd="command"
 alias has="type -a"
 alias what="which -a" # whence -a
@@ -12,16 +12,16 @@ alias opts="getopt"
 
 # 检测 zoxide 是否存在
 if command -v zoxide >/dev/null 2>&1; then
-    # 如果存在，初始化 zoxide 并将别名设为 j
-    eval "$(zoxide init zsh --cmd j)"
+	# 如果存在，初始化 zoxide 并将别名设为 j
+	eval "$(zoxide init zsh --cmd j)"
 else
-    # 否则降级使用传统的 cd
-    alias j="cd"
+	# 否则降级使用传统的 cd
+	alias j="cd"
 fi
 
 # alias c="clear" # use Ctrl+l instead
 
-# r # builtin r for repeat, Great!!! 
+# r # builtin r for repeat, Great!!!
 # r git
 # dirs -v
 

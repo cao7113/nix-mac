@@ -3,7 +3,7 @@
 # top -o cpu
 
 # launchd services
-alias restart="sudo launchctl reboot"
+alias reup="sudo launchctl reboot"
 alias lc="lctl"
 alias agent="lctl"
 alias daemon="sudo lctl"

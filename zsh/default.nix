@@ -23,7 +23,7 @@
       t = "task";
 
       # 替代原生命令
-      l = "eza -lah";
+      # l = "eza -laah";
       # ls = "eza --icons";
       # ll = "eza -lh --icons --git";
       # la = "eza -lah --icons --git";

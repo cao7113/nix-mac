@@ -1,6 +1,6 @@
 # Notice: mise alreay is a shell-functon and command, so here we named it m
 
-function m() {
+function ms() {
 	local act=$1
 	(($# > 0)) && shift
 
