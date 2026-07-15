@@ -60,8 +60,11 @@ function show_help() {
 	echo -e "  lctl reload [Service Label].      ${C_CYAN}# 重载plist文件(应用配置变更) ${C_RESET}"
 	echo -e "  lctl readd [Service Label].       ${C_CYAN}# 重新添加plist(应对label变更等) ${C_RESET}"
 	echo -e "  lctl rm, remove [Service Label]   ${C_CYAN}# 彻底移除服务（并删除配置文件）${C_RESET}"
+	echo -e "  lctl on, enable [Service Label]   ${C_CYAN}# 设置 Enable ${C_RESET}"
+	echo -e "  lctl off, disable [Service Label] ${C_CYAN}# 设置 Disable(无法Bootstrap & Start)  ${C_RESET}"
 	echo -e "  lctl f, files                     ${C_CYAN}# 查看 launchd 服务的文件列表${C_RESET}"
 	echo -e "  lctl paths                        ${C_CYAN}# 查看 launchd 服务的各个标准系统路径${C_RESET}"
+	echo -e "  lctl cache                        ${C_CYAN}# 查看 cache 路径 ${C_RESET}"
 	echo -e "  lctl x|exec                       ${C_CYAN}# 运行其它launchctl命令{C_RESET}"
 	echo -e "${C_GRAY}----------------------------------------------------------------------${C_RESET}"
 	echo -e "🔍 [list] 命令专属选项:"
@@ -390,10 +393,10 @@ function cmd_add() {
 
 function cmd_remove() {
 	local label=$1
-
-	# bootout是同步操作，launchctl remove是异步的，推荐直接使用bootout！ launchctl remove 和 load/unload类似，是旧版命令
 	detect_label_service "$label"
 	echo "🛑 正在停止服务 $DOMAIN/$label..."
+
+	# bootout是同步操作，旧版launchctl remove是异步的
 	launchctl bootout "$DOMAIN" "$TARGET_FILE" 2>/dev/null
 	echo "🗑️ 正在删除 plist 配置文件: $TARGET_FILE from DOMAIN: $DOMAIN ..."
 	rm "$TARGET_FILE"
@@ -419,7 +422,12 @@ function cmd_start() {
 	local label=$1
 	detect_label_service "$label"
 	echo "🚀 正在启动服务 [Domain: ${DOMAIN}]..."
-	if launchctl bootstrap "$DOMAIN" "$TARGET_FILE" 2>/dev/null; then
+
+	# 确保已经加载
+	launchctl bootstrap "$DOMAIN" "$TARGET_FILE" 2>/dev/null
+
+	# 代替旧版launchctl start命令
+	if launchctl kickstart -p "$DOMAIN/$label"; then
 		echo "✅ 服务已成功重新启动。"
 	else
 		echo "❌ 启动失败。"
@@ -429,8 +437,10 @@ function cmd_start() {
 function cmd_stop() {
 	local label=$1
 	detect_label_service "$label"
-	echo "🛑 正在停止服务 [Domain: ${DOMAIN}](从内存移除service)..."
-	if launchctl bootout "$DOMAIN" "$TARGET_FILE" 2>/dev/null; then
+	echo "🛑 正在停止服务 [Domain: ${DOMAIN}](踢出内存，避免被KeepAlive重新唤起)..."
+
+	# 代替旧版launchctl stop命令
+	if launchctl bootout "$DOMAIN/$label" 2>/dev/null; then
 		echo "✅ 服务已成功停止并卸载。"
 	else
 		echo "❌ 停止失败或服务本就未运行。"
@@ -449,6 +459,7 @@ function cmd_kill() {
 	(($# > 0)) && shift
 
 	launchctl kill $signal ${DOMAIN}/$label "$@"
+	echo "⚠️：可能被KeepAlive重新唤起！！"
 
 	# # 强制杀死当前用户 GUI 域下的指定服务
 	# launchctl kill SIGKILL gui/501/com.example.helper
@@ -463,7 +474,7 @@ function cmd_restart() {
 	local label=$1
 	detect_label_service "$label"
 	echo "🛑 正在停止服务 ${DOMAIN}/$label ..."
-	if launchctl kickstart -k "$DOMAIN/$label" 2>/dev/null; then
+	if launchctl kickstart -k -p "$DOMAIN/$label" 2>/dev/null; then
 		echo "✅ 服务已重启。"
 	else
 		echo "❌ 重启失败。"
@@ -479,6 +490,30 @@ function cmd_reload() {
 
 	cmd_stop $label
 	cmd_start $label
+}
+
+function cmd_enable() {
+	local label=$1
+	detect_label_service "$label"
+	echo "🛑 正在 Enable 服务 ${DOMAIN}/$label..."
+
+	if launchctl enable "$DOMAIN/$label" 2>/dev/null; then
+		echo "✅ 服务已成功 Enable (可以重新bootstrap和启动了)。"
+	else
+		echo "❌ Enable失败"
+	fi
+}
+
+function cmd_disable() {
+	local label=$1
+	detect_label_service "$label"
+	echo "🛑 正在 Disable 服务 ${DOMAIN}/$label..."
+
+	if launchctl disable "$DOMAIN/$label" 2>/dev/null; then
+		echo "✅ 服务已成功 Disable (已无法bootstrap和启动)"
+	else
+		echo "❌ Disable 失败"
+	fi
 }
 
 function cmd_paths() {
@@ -525,7 +560,7 @@ function cmd_log() {
 	echo "------------------------------------------------------------"
 
 	# 直接执行 log show，默认加上调试级别，后面的 $@ 把你输入的其它参数原封不动传过去
-	command log show \
+	/usr/bin/log show \
 		--predicate "processID == 1 AND eventMessage CONTAINS \"${label}\"" \
 		--debug \
 		--info \
@@ -630,6 +665,15 @@ function main() {
 	kill)
 		cmd_kill "$@"
 		;;
+	on | enable)
+		cmd_enable "$@"
+		;;
+	off | disable)
+		cmd_disable "$@"
+		;;
+	disabled)
+		launchctl dumpstate | awk '/disabled services = {/,/}/'
+		;;
 	log)
 		cmd_log "$@"
 		;;
@@ -639,12 +683,12 @@ function main() {
 	paths)
 		cmd_paths "$@"
 		;;
-	h | help | --help | -h | "")
-		show_help
-		;;
 	x | exec)
 		exec launchctl "$@"
 		# disable/enable some.job
+		;;
+	xh | hx)
+		launchctl help "$@"
 		;;
 	dom | domain)
 		cmd_domain_of "$@"
@@ -653,6 +697,9 @@ function main() {
 		echo "current cache file: $CACHE_FILE"
 		echo "user cache file: $USER_CACHE_FILE"
 		echo "system cache file: $SYS_CACHE_FILE"
+		;;
+	h | help | --help | -h | "")
+		show_help
 		;;
 	*)
 		echo "❌ 未知命令: $act"
