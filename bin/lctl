@@ -16,6 +16,11 @@ readonly GLOBAL_AGENT_DIR="/Library/LaunchAgents"
 readonly SYS_AGENT_DIR="/System/Library/LaunchAgents" # 暂不支持哦！
 readonly SYS_DAEMON_DIR="/System/Library/LaunchDaemons"
 
+# 💾 持久化文件缓存系统 (File-based Cache)
+# 缓存格式：label=target_file|domain
+readonly USER_CACHE_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/lctl/cache"
+readonly SYS_CACHE_FILE="/var/tmp/lctl_system_cache"
+
 # 用户指定的运行模式：默认为 gui 域
 AGENT_SUB_DOMAIN="gui"
 
@@ -25,6 +30,8 @@ DOMAIN=""
 IS_DAEMON=false
 REAL_UID=0
 VERBOSE=false
+CACHE_FILE="${USER_CACHE_FILE}"
+typeset -A SERVICE_CACHE
 
 function show_help() {
 	local C_GREEN="\033[32m"
@@ -50,8 +57,8 @@ function show_help() {
 	echo -e "  lctl up, start [Service Label]    ${C_CYAN}# 启动服务（根据文件位置自动识别）${C_RESET}"
 	echo -e "  lctl down, stop [Service Label]   ${C_CYAN}# 停止服务（根据文件位置自动识别）${C_RESET}"
 	echo -e "  lctl reup, restart [Service Label]${C_CYAN}# 重启服务进程（根据文件位置自动识别）${C_RESET}"
-	echo -e "  lctl reload [Service Label].      ${C_CYAN}# 重载plist文件${C_RESET}"
-	echo -e "  lctl readd [Service Label].       ${C_CYAN}# 重新添加plist${C_RESET}"
+	echo -e "  lctl reload [Service Label].      ${C_CYAN}# 重载plist文件(应用配置变更) ${C_RESET}"
+	echo -e "  lctl readd [Service Label].       ${C_CYAN}# 重新添加plist(应对label变更等) ${C_RESET}"
 	echo -e "  lctl rm, remove [Service Label]   ${C_CYAN}# 彻底移除服务（并删除配置文件）${C_RESET}"
 	echo -e "  lctl f, files                     ${C_CYAN}# 查看 launchd 服务的文件列表${C_RESET}"
 	echo -e "  lctl paths                        ${C_CYAN}# 查看 launchd 服务的各个标准系统路径${C_RESET}"
@@ -70,54 +77,153 @@ function init_env() {
 		DOMAIN="system"
 		IS_DAEMON=true
 		REAL_UID=${SUDO_UID:-0}
+		CACHE_FILE="$SYS_CACHE_FILE"
 	else
-		local my_uid
-		my_uid=$(id -u)
-
+		local my_uid=$(id -u)
 		TARGET_DIR=$AGENT_DIR
 		DOMAIN="${AGENT_SUB_DOMAIN}/${my_uid}"
 		IS_DAEMON=false
+		CACHE_FILE="${USER_CACHE_FILE}"
+	fi
+
+	# 优先加载本地文件缓存到内存
+	load_cache
+}
+
+# 从文件加载缓存到内存
+function load_cache() {
+	if [[ -f "$CACHE_FILE" ]]; then
+		while IFS='=' read -r key val; do
+			# 忽略空行和注释
+			[[ -n "$key" && "$key" != \#* ]] && SERVICE_CACHE[$key]="$val"
+		done <"$CACHE_FILE"
 	fi
 }
 
-# 智能检测已存在服务所在的目录和域
-# 尊重原设计：只进行物理文件路径锁定，Domain 严格遵循命令行参数设定，不猜测 plist 内容
-function detect_service() {
+# 将内存缓存写入文件
+function write_cache() {
+	local parent_dir
+	parent_dir=$(dirname "$CACHE_FILE")
+	[[ ! -d "$parent_dir" ]] && mkdir -p "$parent_dir"
+
+	: >"$CACHE_FILE" # 清空原文件
+	for k in "${(k)SERVICE_CACHE[@]}"; do
+		echo "$k=${SERVICE_CACHE[$k]}" >>"$CACHE_FILE"
+	done
+}
+
+# 自动发现service所在目录，并将{TARGET_FILE|DOMAIN写入cache文件
+function detect_label_service() {
 	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ Error: Require Service Label"
+		exit 1
+	fi
 	local soft_mode=${2:-false}
+
 	local filename="${label}"
 	[[ "$filename" != *.plist ]] && filename="${label}.plist"
 
+	local my_uid=$(id -u)
+	local found_file=""
+	local target_domain=""
+
+	# 1. 优先击中持久化文件缓存
+	if [[ -n "${SERVICE_CACHE[$label]}" ]]; then
+		local cached_val="${SERVICE_CACHE[$label]}"
+		TARGET_FILE="${cached_val%%|*}"
+		DOMAIN="${cached_val##*|}"
+
+		# 🚨 核心自愈：验证缓存的物理文件是否还存在。如果不存在，说明是脏数据
+		if [[ -f "$TARGET_FILE" ]]; then
+			# 缓存有效，秒级返回，不发生任何磁盘扫描和 launchctl 查询！
+			if [[ "$VERBOSE" == "true" ]]; then
+				echo "# detected: DOMAIN: $DOMAIN TARGET_FILE: $TARGET_FILE from cache-file: $CACHE_FILE"
+			fi
+			return 0
+		else
+			# 缓存失效，默默清除它，继续走下文的真实探测
+			unset "SERVICE_CACHE[$label]"
+			write_cache
+		fi
+	fi
+
+	# 2. 物理文件扫描 (缓存未击中时的降级通道)
 	if [[ -f "${DAEMON_DIR}/${filename}" ]]; then
-		if [[ $EUID -ne 0 ]]; then
-			echo "❌ 错误: 该服务是系统级 Daemon，请在命令前加上 'sudo' 执行。"
-			exit 1
-		fi
-		TARGET_FILE="${DAEMON_DIR}/${filename}"
-		DOMAIN="system"
-		return 0
+		found_file="${DAEMON_DIR}/${filename}"
+		target_domain="system"
 	elif [[ -f "${AGENT_DIR}/${filename}" ]]; then
-		if [[ $EUID -eq 0 ]]; then
-			echo "❌ 错误: 该服务是用户级 Agent，请【不要】加 'sudo' 执行。"
-			exit 1
-		fi
-		TARGET_FILE="${AGENT_DIR}/${filename}"
-		return 0
+		found_file="${AGENT_DIR}/${filename}"
+		target_domain="gui/${my_uid}"
 	elif [[ -f "${SYS_AGENT_DIR}/${filename}" ]]; then
-		TARGET_FILE="${SYS_AGENT_DIR}/${filename}"
-		return 0
+		found_file="${SYS_AGENT_DIR}/${filename}"
+		target_domain="gui/${my_uid}"
 	elif [[ -f "${SYS_DAEMON_DIR}/${filename}" ]]; then
-		TARGET_FILE="${SYS_DAEMON_DIR}/${filename}"
-		DOMAIN="system"
-		return 0
-	else
+		found_file="${SYS_DAEMON_DIR}/${filename}"
+		target_domain="system"
+	fi
+
+	# 3. 物理文件不存在的安全退出
+	if [[ -z "$found_file" ]]; then
 		if [[ "$soft_mode" == "true" ]]; then
-			TARGET_FILE=""
 			return 1
 		fi
-		echo "❌ 错误: 在所有的 Daemon 和 Agent 目录中均未找到 Service Label 为 '${label}' 的 plist 文件"
+		echo "❌ 错误: 未能在系统中定位 Service Label 为 '${label}' 的 plist 文件"
 		exit 1
 	fi
+
+	# 4. 统一全域内存状态对齐并权限拦截
+	local C_YELLOW="\033[33m"
+	local C_RESET="\033[0m"
+
+	if [[ "$target_domain" == "system" ]]; then
+		# 系统级 Daemon 权限安全拦截
+		if [[ $EUID -ne 0 ]]; then
+			echo "❌ 错误: 该服务是系统级 Daemon (${found_file})，请使用 'sudo lctl' 执行。"
+			exit 1
+		fi
+	else
+		# 用户级 Agent 权限拦截
+		if [[ $EUID -eq 0 ]]; then
+			echo "❌ 错误: 该服务是用户级 Agent (${found_file})，请【不要】加 'sudo' 执行。"
+			exit 1
+		fi
+
+		# 跨域自适应检测 (仅在无缓存、第一次运行时产生开销)
+		local in_gui=false
+		local in_user=false
+		launchctl print "gui/${my_uid}/${label}" &>/dev/null && in_gui=true
+		launchctl print "user/${my_uid}/${label}" &>/dev/null && in_user=true
+
+		if [[ "$in_gui" == "true" ]]; then
+			if [[ "$AGENT_SUB_DOMAIN" == "user" ]]; then
+				echo -e "${C_YELLOW}⚠️  警示: '${label}' 实际注册在 [gui] 域，已自动切换域。${C_RESET}"
+				AGENT_SUB_DOMAIN="gui"
+			fi
+			target_domain="gui/${my_uid}"
+		elif [[ "$in_user" == "true" ]]; then
+			if [[ "$AGENT_SUB_DOMAIN" == "gui" ]]; then
+				echo -e "${C_YELLOW}⚠️  警示: '${label}' 实际注册在 [user] 域，已自动切换域。${C_RESET}"
+				AGENT_SUB_DOMAIN="user"
+			fi
+			target_domain="user/${my_uid}"
+		else
+			# 两域均无此活跃服务，尊重全局控制参数
+			target_domain="${AGENT_SUB_DOMAIN}/${my_uid}"
+		fi
+	fi
+
+	# 5. 写入状态、写入缓存文件
+	TARGET_FILE="$found_file"
+	DOMAIN="$target_domain"
+	SERVICE_CACHE[$label]="${TARGET_FILE}|${DOMAIN}"
+	write_cache
+
+	if [[ "$VERBOSE" == "true" ]]; then
+		echo "# detected: DOMAIN: $DOMAIN TARGET_FILE: $TARGET_FILE and refresh into cache-file: $CACHE_FILE"
+	fi
+
+	return 0
 }
 
 # 安全提取 plist 的 Label
@@ -128,37 +234,6 @@ function get_plist_label() {
 }
 
 # ----- 子命令函数实现 -----
-
-function cmd_paths() {
-	local C_CYAN="\033[36m"
-	local C_RESET="\033[0m"
-
-	echo "# Service Paths:"
-	printf "%-15s = %b%s%b\n" "AGENT_DIR" "$C_CYAN" "$AGENT_DIR" "$C_RESET"
-	printf "%-15s = %b%s%b\n" "GLOBAL_AGENT_DIR" "$C_CYAN" "$GLOBAL_AGENT_DIR" "$C_RESET"
-	printf "%-15s = %b%s%b\n" "SYS_AGENT_DIR" "$C_CYAN" "$SYS_AGENT_DIR" "$C_RESET"
-	echo
-	printf "%-15s = %b%s%b\n" "DAEMON_DIR" "$C_CYAN" "$DAEMON_DIR" "$C_RESET"
-	printf "%-15s = %b%s%b\n" "SYS_DAEMON_DIR" "$C_CYAN" "$SYS_DAEMON_DIR" "$C_RESET"
-}
-
-function cmd_files() {
-	if [ "$IS_DAEMON" = true ]; then
-		echo "# Daemon files (Skip $SYS_DAEMON_DIR)"
-		(
-			set -x
-			ls -l $DAEMON_DIR
-		)
-	else
-		echo "# Agent files (Skip $SYS_AGENT_DIR)"
-		(
-			set -x
-			ls -l $AGENT_DIR
-			echo
-			ls -l $GLOBAL_AGENT_DIR
-		)
-	fi
-}
 
 function cmd_list() {
 	local view_mode="default"
@@ -226,12 +301,7 @@ function cmd_list() {
 
 function cmd_view() {
 	local label=$1
-	if [[ -z "$label" ]]; then
-		echo "❌ 错误: 请指定 Service Label。"
-		exit 1
-	fi
-
-	detect_service "$label" true
+	detect_label_service "$label" true
 	local detect_status=$?
 
 	echo "📋 服务详细信息 [$label]"
@@ -262,18 +332,14 @@ function cmd_view() {
 
 function cmd_print() {
 	local label=$1
+	detect_label_service "$label"
 	launchctl print $DOMAIN/$label
 	# launchctl print $DOMAIN/$label | grep -E "pid =|status =|state ="
 }
 
 function cmd_cat() {
 	local label=$1
-	if [[ -z "$label" ]]; then
-		echo "❌ 错误: 请指定 Service Label。"
-		exit 1
-	fi
-
-	detect_service "$label" false
+	detect_label_service "$label"
 
 	echo "📄 配置文件内容: $TARGET_FILE"
 	echo "============================================================"
@@ -283,39 +349,12 @@ function cmd_cat() {
 
 function cmd_json() {
 	local label=$1
-	if [[ -z "$label" ]]; then
-		echo "❌ 错误: 请指定 Service Label。"
-		exit 1
-	fi
-
-	detect_service "$label" false
+	detect_label_service "$label"
 
 	echo "📄 配置文件内容: $TARGET_FILE as JSON"
 	echo "============================================================"
 	plutil -convert json -o - "$TARGET_FILE" | jq
 	echo -e "\n============================================================"
-}
-
-function cmd_log() {
-	local label=$1
-	if [[ -z "$label" ]]; then
-		echo "❌ 错误: 请指定 Service Label。"
-		echo "用法: lctl log [Service Label] [额外选项...，如 --last 10m]"
-		exit 1
-	fi
-	shift # 剥离掉第一个参数(Label)
-
-	echo "🔎 正在查询 launchd (PID 1) 中关于 '${label}' 的日志..."
-	echo "------------------------------------------------------------"
-
-	# 直接执行 log show，默认加上调试级别，后面的 $@ 把你输入的其它参数原封不动传过去
-	command log show \
-		--predicate "processID == 1 AND eventMessage CONTAINS \"${label}\"" \
-		--debug \
-		--info \
-		--last 5m \
-		--style compact \
-		"$@"
 }
 
 function cmd_add() {
@@ -351,14 +390,9 @@ function cmd_add() {
 
 function cmd_remove() {
 	local label=$1
-	if [[ -z "$label" ]]; then
-		echo "❌ 错误: 请指定 Service Label。"
-		exit 1
-	fi
 
-	# launchctl remove 和 load/unload类似，是旧版命令
-	# bootout是同步操作，remove是异步的，推荐直接使用bootout！
-	detect_service "$label"
+	# bootout是同步操作，launchctl remove是异步的，推荐直接使用bootout！ launchctl remove 和 load/unload类似，是旧版命令
+	detect_label_service "$label"
 	echo "🛑 正在停止服务 $DOMAIN/$label..."
 	launchctl bootout "$DOMAIN" "$TARGET_FILE" 2>/dev/null
 	echo "🗑️ 正在删除 plist 配置文件: $TARGET_FILE from DOMAIN: $DOMAIN ..."
@@ -373,10 +407,9 @@ function cmd_readd() {
 		exit 1
 	fi
 
-	local label dest_file
-	label=${2:-$(get_plist_label "$src_file")}
+	local label=${2:-$(get_plist_label "$src_file")}
 
-	echo "Remove service label: $label and readd file: $src_file"
+	echo "Remove service: $label and re-add from file: $src_file"
 
 	cmd_remove $label
 	cmd_add $src_file
@@ -384,12 +417,7 @@ function cmd_readd() {
 
 function cmd_start() {
 	local label=$1
-	if [[ -z "$label" ]]; then
-		echo "❌ 错误: 请指定 Service Label。"
-		exit 1
-	fi
-
-	detect_service "$label"
+	detect_label_service "$label"
 	echo "🚀 正在启动服务 [Domain: ${DOMAIN}]..."
 	if launchctl bootstrap "$DOMAIN" "$TARGET_FILE" 2>/dev/null; then
 		echo "✅ 服务已成功重新启动。"
@@ -400,12 +428,7 @@ function cmd_start() {
 
 function cmd_stop() {
 	local label=$1
-	if [[ -z "$label" ]]; then
-		echo "❌ 错误: 请指定 Service Label。"
-		exit 1
-	fi
-
-	detect_service "$label"
+	detect_label_service "$label"
 	echo "🛑 正在停止服务 [Domain: ${DOMAIN}](从内存移除service)..."
 	if launchctl bootout "$DOMAIN" "$TARGET_FILE" 2>/dev/null; then
 		echo "✅ 服务已成功停止并卸载。"
@@ -415,19 +438,15 @@ function cmd_stop() {
 }
 
 function cmd_kill() {
-	local signal=$1
-	if [[ -z "$signal" ]]; then
-		echo "❌ 错误: 请指定 Signal。"
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
 		exit 1
 	fi
 	shift
 
-	local label=$1
-	if [[ -z "$label" ]]; then
-		echo "❌ 错误: 请指定 Service Label。"
-		exit 2
-	fi
-	shift
+	local signal=${1:-SIGKILL}
+	(($# > 0)) && shift
 
 	launchctl kill $signal ${DOMAIN}/$label "$@"
 
@@ -442,13 +461,8 @@ function cmd_kill() {
 # launchctl kickstart -k 参数表示如果任务正在跑，先杀掉它再重启（类似 restart）
 function cmd_restart() {
 	local label=$1
-	if [[ -z "$label" ]]; then
-		echo "❌ 错误: 请指定 Service Label。"
-		exit 1
-	fi
-
-	detect_service "$label"
-	echo "🛑 正在停止服务 [Domain: ${DOMAIN}]..."
+	detect_label_service "$label"
+	echo "🛑 正在停止服务 ${DOMAIN}/$label ..."
 	if launchctl kickstart -k "$DOMAIN/$label" 2>/dev/null; then
 		echo "✅ 服务已重启。"
 	else
@@ -465,6 +479,59 @@ function cmd_reload() {
 
 	cmd_stop $label
 	cmd_start $label
+}
+
+function cmd_paths() {
+	local C_CYAN="\033[36m"
+	local C_RESET="\033[0m"
+
+	echo "# Service Paths:"
+	printf "%-15s = %b%s%b\n" "AGENT_DIR" "$C_CYAN" "$AGENT_DIR" "$C_RESET"
+	printf "%-15s = %b%s%b\n" "GLOBAL_AGENT_DIR" "$C_CYAN" "$GLOBAL_AGENT_DIR" "$C_RESET"
+	printf "%-15s = %b%s%b\n" "SYS_AGENT_DIR" "$C_CYAN" "$SYS_AGENT_DIR" "$C_RESET"
+	echo
+	printf "%-15s = %b%s%b\n" "DAEMON_DIR" "$C_CYAN" "$DAEMON_DIR" "$C_RESET"
+	printf "%-15s = %b%s%b\n" "SYS_DAEMON_DIR" "$C_CYAN" "$SYS_DAEMON_DIR" "$C_RESET"
+}
+
+function cmd_files() {
+	if [ "$IS_DAEMON" = true ]; then
+		echo "# Daemon files (Skip $SYS_DAEMON_DIR)"
+		(
+			set -x
+			ls -l $DAEMON_DIR
+		)
+	else
+		echo "# Agent files (Skip $SYS_AGENT_DIR)"
+		(
+			set -x
+			ls -l $AGENT_DIR
+			echo
+			ls -l $GLOBAL_AGENT_DIR
+		)
+	fi
+}
+
+function cmd_log() {
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
+		echo "用法: lctl log [Service Label] [额外选项...，如 --last 10m]"
+		exit 1
+	fi
+	shift # 剥离掉第一个参数(Label)
+
+	echo "🔎 正在查询 launchd (PID 1) 中关于 '${label}' 的日志..."
+	echo "------------------------------------------------------------"
+
+	# 直接执行 log show，默认加上调试级别，后面的 $@ 把你输入的其它参数原封不动传过去
+	command log show \
+		--predicate "processID == 1 AND eventMessage CONTAINS \"${label}\"" \
+		--debug \
+		--info \
+		--last 5m \
+		--style compact \
+		"$@"
 }
 
 function cmd_domain_of() {
@@ -517,7 +584,7 @@ function main() {
 	init_env
 
 	if [[ "$VERBOSE" == "true" ]]; then
-		echo "DEBUG: DOMAIN: $DOMAIN TARGET_DIR: $TARGET_DIR TARGET_FILE: $TARGET_FILE"
+		echo "DEBUG: DOMAIN: $DOMAIN TARGET_FILE: $TARGET_FILE CACHE_FILE: $CACHE_FILE"
 	fi
 
 	local act=$1
@@ -581,6 +648,11 @@ function main() {
 		;;
 	dom | domain)
 		cmd_domain_of "$@"
+		;;
+	cache)
+		echo "current cache file: $CACHE_FILE"
+		echo "user cache file: $USER_CACHE_FILE"
+		echo "system cache file: $SYS_CACHE_FILE"
 		;;
 	*)
 		echo "❌ 未知命令: $act"
