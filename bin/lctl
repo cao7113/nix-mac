@@ -15,6 +15,7 @@ readonly DAEMON_DIR="/Library/LaunchDaemons"
 readonly GLOBAL_AGENT_DIR="/Library/LaunchAgents"
 readonly SYS_AGENT_DIR="/System/Library/LaunchAgents" # 暂不支持哦！
 readonly SYS_DAEMON_DIR="/System/Library/LaunchDaemons"
+readonly SITE_URL="https://www.launchd.info/"
 
 # 💾 持久化文件缓存系统 (File-based Cache)
 # 缓存格式：label=target_file|domain
@@ -62,8 +63,10 @@ function show_help() {
 	echo -e "  lctl rm, remove [Service Label]   ${C_CYAN}# 彻底移除服务（并删除配置文件）${C_RESET}"
 	echo -e "  lctl on, enable [Service Label]   ${C_CYAN}# 设置 Enable ${C_RESET}"
 	echo -e "  lctl off, disable [Service Label] ${C_CYAN}# 设置 Disable(无法Bootstrap & Start)  ${C_RESET}"
+	echo -e "  lctl slog, ulog [Service Label]   ${C_CYAN}# 查看关联 service管理log  ${C_RESET}"
 	echo -e "  lctl f, files                     ${C_CYAN}# 查看 launchd 服务的文件列表${C_RESET}"
 	echo -e "  lctl paths                        ${C_CYAN}# 查看 launchd 服务的各个标准系统路径${C_RESET}"
+	echo -e "  lctl o, open                      ${C_CYAN}# 打开参考配置网址 ${C_RESET}"
 	echo -e "  lctl cache                        ${C_CYAN}# 查看 cache 路径 ${C_RESET}"
 	echo -e "  lctl x|exec                       ${C_CYAN}# 运行其它launchctl命令{C_RESET}"
 	echo -e "${C_GRAY}----------------------------------------------------------------------${C_RESET}"
@@ -360,6 +363,20 @@ function cmd_json() {
 	echo -e "\n============================================================"
 }
 
+function cmd_conf() {
+	local label=$1
+	detect_label_service "$label"
+
+	echo "$DOMAIN/$label conf from $TARGET_FILE"
+	local json_info=$(plutil -convert json -o - $TARGET_FILE)
+	echo "Program: "
+	echo "$json_info" | jq -r '.ProgramArguments | join(" ")'
+
+	echo "Stdout and stderr: "
+	echo "$json_info" | jq -r '.StandardOutPath // "不存在"'
+	echo "$json_info" | jq -r '.StandardErrorPath // "不存在"'
+}
+
 function cmd_add() {
 	local src_file=$1
 	if [[ -z "$src_file" || ! -f "$src_file" ]]; then
@@ -516,6 +533,58 @@ function cmd_disable() {
 	fi
 }
 
+function cmd_log() {
+	local label=$1
+	detect_label_service "$label"
+
+	# 1. 将 plist 转换为 json
+	local json_info=$(plutil -convert json -o - "$TARGET_FILE")
+
+	# 2. 仅调用一次 jq，一次性获取 stdout 和 stderr 路径（用换行符分隔）
+	local paths=(${(f)"$(echo "$json_info" | jq -r '.StandardOutPath, .StandardErrorPath')"})
+
+	local stdout_file=${paths[1]}
+	local stderr_file=${paths[2]}
+
+	# 3. 过滤掉 "null" 或空值，整理出实际有效的日志文件列表
+	local active_logs=()
+	[[ -n "$stdout_file" && "$stdout_file" != "null" ]] && active_logs+=("$stdout_file")
+	[[ -n "$stderr_file" && "$stderr_file" != "null" ]] && active_logs+=("$stderr_file")
+
+	# 4. 如果两个路径都不存在，报错并打印 JSON 内容后退出
+	if [[ ${#active_logs[@]} -eq 0 ]]; then
+		echo "WARN: no StandardOutPath and StandardErrorPath from plist file!"
+		echo "$json_info" | jq '.'
+		exit
+	fi
+
+	# 5. 打印提示并安全地 tail 存在的日志文件
+	echo "# tail ${DOMAIN}/$label log from: ${active_logs[*]}"
+	tail -f "${active_logs[@]}"
+}
+
+function cmd_slog() {
+	local label=$1
+	if [[ -z "$label" ]]; then
+		echo "❌ 错误: 请指定 Service Label。"
+		echo "用法: lctl log [Service Label] [额外选项...，如 --last 10m]"
+		exit 1
+	fi
+	shift # 剥离掉第一个参数(Label)
+
+	echo "🔎 正在查询 launchd (PID 1) 中关于 '${label}' 的日志..."
+	echo "------------------------------------------------------------"
+
+	# 直接执行 log show，默认加上调试级别，后面的 $@ 把你输入的其它参数原封不动传过去
+	/usr/bin/log show \
+		--predicate "processID == 1 AND eventMessage CONTAINS \"${label}\"" \
+		--debug \
+		--info \
+		--last 5m \
+		--style compact \
+		"$@"
+}
+
 function cmd_paths() {
 	local C_CYAN="\033[36m"
 	local C_RESET="\033[0m"
@@ -545,28 +614,6 @@ function cmd_files() {
 			ls -l $GLOBAL_AGENT_DIR
 		)
 	fi
-}
-
-function cmd_log() {
-	local label=$1
-	if [[ -z "$label" ]]; then
-		echo "❌ 错误: 请指定 Service Label。"
-		echo "用法: lctl log [Service Label] [额外选项...，如 --last 10m]"
-		exit 1
-	fi
-	shift # 剥离掉第一个参数(Label)
-
-	echo "🔎 正在查询 launchd (PID 1) 中关于 '${label}' 的日志..."
-	echo "------------------------------------------------------------"
-
-	# 直接执行 log show，默认加上调试级别，后面的 $@ 把你输入的其它参数原封不动传过去
-	/usr/bin/log show \
-		--predicate "processID == 1 AND eventMessage CONTAINS \"${label}\"" \
-		--debug \
-		--info \
-		--last 5m \
-		--style compact \
-		"$@"
 }
 
 function cmd_domain_of() {
@@ -641,6 +688,9 @@ function main() {
 	j | json)
 		cmd_json "$@"
 		;;
+	conf)
+		cmd_conf "$@"
+		;;
 	a | add)
 		cmd_add "$@"
 		;;
@@ -677,6 +727,9 @@ function main() {
 	log)
 		cmd_log "$@"
 		;;
+	slog | ulog)
+		cmd_slog "$@"
+		;;
 	f | files)
 		cmd_files "$@"
 		;;
@@ -692,6 +745,10 @@ function main() {
 		;;
 	dom | domain)
 		cmd_domain_of "$@"
+		;;
+	o | open)
+		open "$SITE_URL"
+		echo "opening $SITE_URL"
 		;;
 	cache)
 		echo "current cache file: $CACHE_FILE"
