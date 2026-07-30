@@ -1,0 +1,44 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: echo hi
+
+  cron.log: |
+    /usr/bin/log stream --predicate 'eventMessage CONTAINS "cronjob"' --debug --info # --style json
+
+  echo.log: |
+    /usr/bin/log stream --predicate 'eventMessage CONTAINS "test-echo"' --debug --info # --style json
+
+  # {
+  #   "timezoneName" : "",
+  #   "messageType" : "Default",
+  #   "eventType" : "logEvent",
+  #   "source" : null,
+  #   "formatString" : "%{public}s",
+  #   "userID" : 501,
+  #   "activityIdentifier" : 0,
+  #   "subsystem" : "",
+  #   "category" : "",
+  #   "threadID" : 335118,
+  #   "senderImageUUID" : "5AD187F4-FBEE-3825-8D97-C48CDDCB9CCB",
+  #   "backtrace" : {
+  #     "frames" : [
+  #       {
+  #         "imageOffset" : 143380,
+  #         "imageUUID" : "5AD187F4-FBEE-3825-8D97-C48CDDCB9CCB"
+  #       }
+  #     ]
+  #   },
+  #   "bootUUID" : "",
+  #   "processImagePath" : "\/usr\/bin\/log",
+  #   "senderImagePath" : "\/usr\/bin\/log",
+  #   "timestamp" : "2026-07-16 11:18:43.638811+0800",
+  #   "machTimestamp" : 1655621794731,
+  #   "eventMessage" : "\"test-cronjob in unified-log\"",
+  #   "processImageUUID" : "5AD187F4-FBEE-3825-8D97-C48CDDCB9CCB",
+  #   "traceID" : 1180016494903300,
+  #   "processID" : 38172,
+  #   "senderProgramCounter" : 143380,
+  #   "parentActivityIdentifier" : 0
+  # }

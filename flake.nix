@@ -25,6 +25,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # https://github.com/jdx/fnox/releases#release-v1.29.0
+    fnox = {
+      url = "github:jdx/fnox";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # dot-sec-data = {
     #   # 引用方式,语法示例,适用场景
     #   # 远程 SSH,git+ssh://...,多机同步，从服务器拉取加密数据。

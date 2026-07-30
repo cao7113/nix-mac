@@ -3,7 +3,11 @@
 # top -o cpu
 
 # launchd services
-alias reup="sudo launchctl reboot"
+alias chongqi="sudo launchctl reboot"
+# pecify a time in minutes (e.g., +5 for 5 minutes from now) or a specific time in yymmddhhmm format
+# sudo launchctl reboot halt or sudo launchctl reboot shutdown
+alias guanji="sudo shutdown -h now"
+
 alias lc="lctl"
 alias agent="lctl"
 alias daemon="sudo lctl"

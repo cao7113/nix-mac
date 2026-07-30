@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>lab.echo.ulog</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/echo</string>
+        <string>test-echo with unified-log </string>
+    </array>
+
+    <!-- 在无 StandardOutPath 的情况下并不会写入unified log 或写入了不可查，看样子还是要使用 StandardOutPath 才行！！！-->
+
+    <key>StartInterval</key>
+    <integer>5</integer>
+</dict>
+</plist>

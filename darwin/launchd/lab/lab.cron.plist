@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>lab.cron</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/log</string>
+        <string>emit</string>
+        <string>--public</string>
+        <string>test-cronjob in unified-log</string>
+    </array>
+
+    <key>StartInterval</key>
+    <integer>5</integer>
+    <!-- 注意： 实际执行并不精确，会被合并到10s一次唤醒以较少耗电等；高精度需要应用内自己控制 -->
+
+    <!-- <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>15</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict> -->
+</dict>
+</plist>

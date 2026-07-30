@@ -24,82 +24,82 @@ log_err() { echo -e "\033[1;31m[ERROR] $1\033[0m" >&2; }
 # 2. 核心底层函数 (100% 保留的原有 Proxy 逻辑)
 # ==========================================
 
-read_proxy_info() {
-	local env_name="$1" default_val="$2"
-	local proxy_dir="${HOME}/.nix-proxy-cache"
-	local cache_file="${proxy_dir}/$env_name"
+# run_with_proxy() {
+# 	if [[ -n "${SKIP_PROXY:-}" ]]; then
+# 		echo "Skip proxy setting and directly run: $@"
+# 		"$@"
+# 		return $?
+# 	fi
 
-	local env_val="${(P)env_name:-}"
-	[[ -n "$env_val" ]] && {
-		echo "$env_val"
-		return
-	}
+# 	local proxy_host=$(read_proxy_info "PROXY_HOST" "127.0.0.1")
+# 	local proxy_port=$(read_proxy_info "PROXY_PORT" "1087")
+# 	local proxy_socks_port=$(read_proxy_info "PROXY_SOCKS_PORT" "1086")
+# 	local proxy_settings=(
+# 		"http_proxy=http://${proxy_host}:${proxy_port}"
+# 		"https_proxy=http://${proxy_host}:${proxy_port}"
+# 		"all_proxy=socks5h://${proxy_host}:${proxy_socks_port}"
+# 		"no_proxy=localhost,127.0.0.1,local,.local"
+# 	)
 
-	local file_val=""
-	if [[ -f "$cache_file" ]]; then
-		file_val="$(<$cache_file)" 2>/dev/null
-		[[ -n "$file_val" ]] && {
-			echo "$file_val"
-			return
-		}
-	fi
+# 	if [[ -n "${DRY_RUN:-}" ]]; then
+# 		echo "[DRY RUN] env ${proxy_settings[@]} $*"
+# 		return 0
+# 	fi
 
-	if [[ ! -t 0 ]]; then
-		file_val="$default_val"
-	else
-		local input_val=""
-		echo "请输入 $env_name [默认: ${default_val}]: " >&2
-		read -r input_val </dev/tty || input_val=""
-		file_val="${input_val:-$default_val}"
-	fi
+# 	if [[ "$1" = "sudo" ]]; then
+# 		shift
+# 		echo "## proxy run: sudo env ${proxy_settings[@]} $@"
+# 		sudo env "${proxy_settings[@]}" "$@"
+# 	else
+# 		echo "## proxy run: sudo env ${proxy_settings[@]} $@"
+# 		env "${proxy_settings[@]}" "$@"
+# 	fi
 
-	mkdir -p "${cache_file:h}"
-	echo -n "$file_val" >"$cache_file"
-	echo "$file_val"
-}
+# 	local exit_code=$?
+# 	if [[ $exit_code -ne 0 ]]; then
+# 		echo -e "\n[ERROR] Command failed with exit code $exit_code."
+# 		echo "[DEBUG] Active env settings when failure occurred:"
+# 		for setting in "${proxy_settings[@]}"; do
+# 			echo "  $setting"
+# 		done
+# 		echo ""
+# 	fi
+# 	return $exit_code
+# }
 
-run_with_proxy() {
-	if [[ -n "${SKIP_PROXY:-}" ]]; then
-		echo "Skip proxy setting and directly run: $@"
-		"$@"
-		return $?
-	fi
+# read_proxy_info() {
+# 	local env_name="$1" default_val="$2"
+# 	local proxy_dir="${HOME}/.nix-proxy-cache"
+# 	local cache_file="${proxy_dir}/$env_name"
 
-	local proxy_host=$(read_proxy_info "PROXY_HOST" "127.0.0.1")
-	local proxy_port=$(read_proxy_info "PROXY_PORT" "1087")
-	local proxy_socks_port=$(read_proxy_info "PROXY_SOCKS_PORT" "1086")
-	local proxy_settings=(
-		"http_proxy=http://${proxy_host}:${proxy_port}"
-		"https_proxy=http://${proxy_host}:${proxy_port}"
-		"all_proxy=socks5h://${proxy_host}:${proxy_socks_port}"
-		"no_proxy=localhost,127.0.0.1,local,.local"
-	)
+# 	local env_val="${(P)env_name:-}"
+# 	[[ -n "$env_val" ]] && {
+# 		echo "$env_val"
+# 		return
+# 	}
 
-	if [[ -n "${DRY_RUN:-}" ]]; then
-		echo "[DRY RUN] env ${proxy_settings[@]} $*"
-		return 0
-	fi
+# 	local file_val=""
+# 	if [[ -f "$cache_file" ]]; then
+# 		file_val="$(<$cache_file)" 2>/dev/null
+# 		[[ -n "$file_val" ]] && {
+# 			echo "$file_val"
+# 			return
+# 		}
+# 	fi
 
-	if [[ "$1" = "sudo" ]]; then
-		shift
-		echo "## proxy run: sudo env ${proxy_settings[@]} $@"
-		sudo env "${proxy_settings[@]}" "$@"
-	else
-		echo "## proxy run: sudo env ${proxy_settings[@]} $@"
-		env "${proxy_settings[@]}" "$@"
-	fi
+# 	if [[ ! -t 0 ]]; then
+# 		file_val="$default_val"
+# 	else
+# 		local input_val=""
+# 		echo "请输入 $env_name [默认: ${default_val}]: " >&2
+# 		read -r input_val </dev/tty || input_val=""
+# 		file_val="${input_val:-$default_val}"
+# 	fi
 
-	local exit_code=$?
-	if [[ $exit_code -ne 0 ]]; then
-		echo -e "\n[ERROR] Command failed with exit code $exit_code."
-		echo "[DEBUG] Active env settings when failure occurred:"
-		for setting in "${proxy_settings[@]}"; do
-			echo "  $setting"
-		done
-		echo ""
-	fi
-	return $exit_code
-}
+# 	mkdir -p "${cache_file:h}"
+# 	echo -n "$file_val" >"$cache_file"
+# 	echo "$file_val"
+# }
 
 # ==========================================
 # 3. 优化后的状态流转模块
@@ -165,7 +165,7 @@ main() {
 	log_step "正在执行 darwin-rebuild switch..."
 
 	# 3. 执行环境构建（业务变量 NIX_MAC_LEVEL 显式随命令传入底层）
-	if run_with_proxy sudo NIX_MAC_LEVEL="$next_level" darwin-rebuild switch --flake "${REPO_DIR}#mac" --verbose --impure; then
+	if sudo NIX_MAC_LEVEL="$next_level" darwin-rebuild switch --flake "${REPO_DIR}#mac" --verbose --impure; then
 
 		# 4. 【原子落盘】成功后一气呵成修改状态，无需再考虑异常回滚逻辑
 		mkdir -p "${STATE_FILE:h}" && echo "$next_level" >"$STATE_FILE"

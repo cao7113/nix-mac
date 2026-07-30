@@ -7,7 +7,7 @@
 }:
 {
   # gh: GitHub CLI https://cli.github.com/
-  # run with local proxy: 
+  # run with local proxy:
   # gh login # generate local ssh keys as prompts
   # gh ssh add ~/.ssh/id-xxx
   # gh ssh ls
@@ -23,7 +23,8 @@
           ghcmd repo view --json visibility --jq .visibility
           ;;
         cl|clone)
-          gh-smart-clone "$@"
+          # gh-smart-clone "$@"
+          gh repo clone "$@"
           ;;
         remote)
           gh-set-remote "$@"
@@ -43,28 +44,28 @@
       esac
     }
 
-    function gh-smart-clone() {
-        if [[ -z "$1" ]]; then
-            echo "错误: 请输入 repo 或 owner/repo"
-            return 1
-        fi
+    # function gh-smart-clone() {
+    #     if [[ -z "$1" ]]; then
+    #         echo "错误: 请输入 repo 或 owner/repo"
+    #         return 1
+    #     fi
 
-        local target="$1"
-        shift
+    #     local target="$1"
+    #     shift
 
-        # 正则表达式解释：
-        # ^[a-zA-Z0-9._-]+$  -> 纯仓库名格式（不包含斜杠 /）
-        # ^[^/]+/[^/]+$      -> 标准的 owner/repo 格式（包含且仅包含一个斜杠 /）
+    #     # 正则表达式解释：
+    #     # ^[a-zA-Z0-9._-]+$  -> 纯仓库名格式（不包含斜杠 /）
+    #     # ^[^/]+/[^/]+$      -> 标准的 owner/repo 格式（包含且仅包含一个斜杠 /）
 
-        if [[ "$target" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-            # 间接调用 gh-user 函数，享受多级缓存带来的丝滑速度
-            local owner
-            owner=$(gh-user) || return 1
-            echo "# detected gh owner: $owner"
-            target="$owner/$target"
-        fi
-        ghcmd repo clone "$target" "$@"
-    }
+    #     if [[ "$target" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+    #         # 间接调用 gh-user 函数，享受多级缓存带来的丝滑速度
+    #         local owner
+    #         owner=$(gh-user) || return 1
+    #         echo "# detected gh owner: $owner"
+    #         target="$owner/$target"
+    #     fi
+    #     ghcmd repo clone "$target" "$@"
+    # }
 
     function gh-user() {
         # 定义缓存文件路径
