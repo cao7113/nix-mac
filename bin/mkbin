@@ -1,5 +1,6 @@
 #!/bin/zsh
 # Make a zsh-based bin command
+# Usage: mkbin <bin-script-name> [bin-path]
 
 # -e: 出错即退  -u: 变量未定义即退  -o pipefail: 管道错误即退
 set -euo pipefail

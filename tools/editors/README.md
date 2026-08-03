@@ -4,6 +4,10 @@
 - zed
 - neovim
 
+## VsCode
+
+- `Option + Z` 切换`softwrap`
+
 ## Online editors
 
 - https://vscode.dev/

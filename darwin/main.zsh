@@ -12,6 +12,9 @@ alias lc="lctl"
 alias agent="lctl"
 alias daemon="sudo lctl"
 
+# config home
+# ~/Library/Application Support/ or ~/.config
+
 # unified logging
 alias logcmd="command log"
 disable log # 修复zsh内置log 与mac下log命令（/usr/bin/log）冲突！！！

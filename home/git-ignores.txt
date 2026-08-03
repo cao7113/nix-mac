@@ -23,3 +23,5 @@ nohup.out
 # Taskfile
 .task
 .direnv
+
+fnox.local.toml

@@ -20,6 +20,9 @@ function dot-sec-bootstrap() {
 	local act=${1:-info}
 	(($# > 0)) && shift
 
+	local sec_repo_path=${nix_mac_home}/.sec
+	local gh_repo=${DOT_SEC_GH_REPO:-cao7113/dot-sec}
+
 	case "$act" in
 	info)
 		echo "dot_sec_home=$dot_sec_home"
@@ -30,18 +33,20 @@ function dot-sec-bootstrap() {
 		}
 		;;
 	init | setup)
-		local sec_repo_path=${nix_mac_home}/_local/dot-sec
 		[[ -d $sec_repo_path ]] && {
 			echo "Found dot-sec at $sec_repo_path"
 		} || {
 			(
-				local gh_repo=${DOT_SEC_GH_REPO:-cao7113/dot-sec}
 				mkdir -p $(dirname $sec_repo_path)
 				gh repo clone $gh_repo $sec_repo_path
 				ln -snf $sec_repo_path $dot_sec_home
 				echo "Init set dot-sec at: $sec_repo_path and link to $dot_sec_home"
 			)
 		}
+		;;
+	ln)
+		ln -snf $sec_repo_path $dot_sec_home
+		echo "Setup dot-sec at: $sec_repo_path and link to $dot_sec_home"
 		;;
 	esac
 }

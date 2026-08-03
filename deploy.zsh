@@ -24,6 +24,12 @@ log_err() { echo -e "\033[1;31m[ERROR] $1\033[0m" >&2; }
 # 2. 核心底层函数 (100% 保留的原有 Proxy 逻辑)
 # ==========================================
 
+smart_run() {
+	echo "Smart running: $@"
+	"$@"
+	return $?
+}
+
 # run_with_proxy() {
 # 	if [[ -n "${SKIP_PROXY:-}" ]]; then
 # 		echo "Skip proxy setting and directly run: $@"
@@ -165,7 +171,7 @@ main() {
 	log_step "正在执行 darwin-rebuild switch..."
 
 	# 3. 执行环境构建（业务变量 NIX_MAC_LEVEL 显式随命令传入底层）
-	if sudo NIX_MAC_LEVEL="$next_level" darwin-rebuild switch --flake "${REPO_DIR}#mac" --verbose --impure; then
+	if smart_run sudo NIX_MAC_LEVEL="$next_level" darwin-rebuild switch --flake "${REPO_DIR}#mac" --verbose --impure; then
 
 		# 4. 【原子落盘】成功后一气呵成修改状态，无需再考虑异常回滚逻辑
 		mkdir -p "${STATE_FILE:h}" && echo "$next_level" >"$STATE_FILE"
