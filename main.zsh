@@ -78,6 +78,9 @@ if [[ -z "$nix_mac_home" ]]; then
 fi
 
 path=("${nix_mac_home}/bin" $path)
+if [[ -d ~/.local/bin ]]; then
+	path=(~/.local/bin $path)
+fi
 
 DSH_PROFILE_ID="dummy" source "$nix_mac_home/zsh/main.zsh"
 source $nix_mac_home/nix/main.zsh

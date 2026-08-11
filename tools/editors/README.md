@@ -1,6 +1,7 @@
 # IDE 
 
 - vscode
+- cursor
 - zed
 - neovim
 
