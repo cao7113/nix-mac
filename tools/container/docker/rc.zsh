@@ -14,122 +14,122 @@ alias dk="docker"
 alias dki='docker images -a'
 alias dkps="docker ps -a"
 alias dkpl='docker pull'
-dkgrep(){
-  docker images -a |grep $@
+dkgrep() {
+	docker images -a | grep $@
 }
 
 # backup dkstore data to local
-dkappbackup(){
-  [ $# -lt 1 ] && echo Require dkapp name && return 1
-  dkapp=${1} # all
+dkappbackup() {
+	[ $# -lt 1 ] && echo Require dkapp name && return 1
+	dkapp=${1} # all
 
-  dest=~/dkstore/online-backup
-  mkdir -p $dest
+	dest=~/dkstore/online-backup
+	mkdir -p $dest
 
-  srcdir=/home/ubuntu/dkstore/prod
-  srchost=app1.gg
+	srcdir=/home/ubuntu/dkstore/prod
+	srchost=app1.gg
 
-  # failed: Permission denied (13)
-  echo rsync -avzr -e \'ssh -l ubuntu\' --rsync-path=\'sudo rsync\' ubuntu@$srchost:$srcdir/prod-$dkapp-default $dest
-  rsync -avzr -e 'ssh -l ubuntu' --rsync-path='sudo rsync' ubuntu@$srchost:$srcdir/prod-$dkapp-default $dest
+	# failed: Permission denied (13)
+	echo rsync -avzr -e \'ssh -l ubuntu\' --rsync-path=\'sudo rsync\' ubuntu@$srchost:$srcdir/prod-$dkapp-default $dest
+	rsync -avzr -e 'ssh -l ubuntu' --rsync-path='sudo rsync' ubuntu@$srchost:$srcdir/prod-$dkapp-default $dest
 
-  echo ==rsync into $dest/prod-$dkapp-default
+	echo ==rsync into $dest/prod-$dkapp-default
 }
 
-dkstore(){
-  tp=${1:-cd}
-  case "$tp" in
-    cd)
-      cd ~/dkstore
-      ;;
-    backup|bak)
-      dkappbackup $2
-      ;;
-    # build local qa env
-    mkqa)
-      dkbuildqa $2
-      ;;
-    rmqa)
-      dkcleanqa $2
-      ;;
-    *)
-      echo Unknown action: $tp
-      ;;
-  esac
+dkstore() {
+	tp=${1:-cd}
+	case "$tp" in
+	cd)
+		cd ~/dkstore
+		;;
+	backup | bak)
+		dkappbackup $2
+		;;
+	# build local qa env
+	mkqa)
+		dkbuildqa $2
+		;;
+	rmqa)
+		dkcleanqa $2
+		;;
+	*)
+		echo Unknown action: $tp
+		;;
+	esac
 }
 
-dkbuildqa(){
-  [ $# -lt 1 ] && echo Require dkapp name && return 1
-  dkapp=${1}
-  dest=~/dkstore/prod/prod-$dkapp-qa
-  [ -d $dest ] && echo existed $dest && return 2
-  src=~/dkstore/online-backup/prod-$dkapp-default
-  cp -r $src ~/dkstore/prod/prod-$dkapp-qa
-  echo ==prepare $dkapp for qa testing with prod data
+dkbuildqa() {
+	[ $# -lt 1 ] && echo Require dkapp name && return 1
+	dkapp=${1}
+	dest=~/dkstore/prod/prod-$dkapp-qa
+	[ -d $dest ] && echo existed $dest && return 2
+	src=~/dkstore/online-backup/prod-$dkapp-default
+	cp -r $src ~/dkstore/prod/prod-$dkapp-qa
+	echo ==prepare $dkapp for qa testing with prod data
 }
 
-dkcleanqa(){
-  [ $# -lt 1 ] && echo Require dkapp name && return 1
-  dkapp=${1}
-  dest=~/dkstore/prod/prod-$dkapp-qa
-  rm -r $dest
-  echo ==clear $dest
+dkcleanqa() {
+	[ $# -lt 1 ] && echo Require dkapp name && return 1
+	dkapp=${1}
+	dest=~/dkstore/prod/prod-$dkapp-qa
+	rm -r $dest
+	echo ==clear $dest
 }
 
 #alias dku="docker run --rm -ti ubuntu bash"
-dku(){
-  #${BOOTER_COPS_HOME}/case/ubuntu/1804 sh $@
-  dksh ubuntu
+dku() {
+	#${BOOTER_COPS_HOME}/case/ubuntu/1804 sh $@
+	dksh ubuntu
 }
 #/bin/bash -c "while true; do date; sleep 6; done"
 # moby
 alias busybox="docker run --rm -it busybox"
 
-dksearch(){
-  name=${1:-ruby}
-  open "https://store.docker.com/search?q=${name}&type=image&source=verified"
+dksearch() {
+	name=${1:-ruby}
+	open "https://store.docker.com/search?q=${name}&type=image&source=verified"
 }
 
-dksyslog(){
-  # on mac
-  syslog -w -k Sender Docker
-  # on linux
-  # journal -f -u docker
+dksyslog() {
+	# on mac
+	syslog -w -k Sender Docker
+	# on linux
+	# journal -f -u docker
 }
 
 # 容器网络ip
-function dkip(){
-  docker inspect --format='{{.NetworkSettings.IPAddress}}' "$@"
+function dkip() {
+	docker inspect --format='{{.NetworkSettings.IPAddress}}' "$@"
 }
 
 # 根据名字获取容器id, 可用于判断是否存在
 # 状态判断?
-function container_id_by_name(){
-  [ $# -lt 1 ] && return 1
-  name=$1
-  docker ps --filter "name=$name" --format "{{.ID}}"
+function container_id_by_name() {
+	[ $# -lt 1 ] && return 1
+	name=$1
+	docker ps --filter "name=$name" --format "{{.ID}}"
 }
 
-function dksh(){
-  docker run --rm -it ${1:-busybox} ${2:-sh}
+function dksh() {
+	docker run --rm -it ${1:-busybox} ${2:-sh}
 }
 
-function dkash(){
-  docker run --rm -it ${1:-alpine:test} ${2:-sh}
+function dkash() {
+	docker run --rm -it ${1:-alpine:test} ${2:-sh}
 }
 
-function dkbash(){
-  docker run --rm -it ${1:-ubuntu:18.04} bash
+function dkbash() {
+	docker run --rm -it ${1:-ubuntu:18.04} bash
 }
 
 # 进入容器
-function dkin(){
-  echo "==exec into: $@"
-  if [ $# -lt 2 ];then
-    docker exec -it $1 sh
-  else
-    docker exec -it "$@"
-  fi
+function dkin() {
+	echo "==exec into: $@"
+	if [ $# -lt 2 ]; then
+		docker exec -it $1 sh
+	else
+		docker exec -it "$@"
+	fi
 }
 
 ## Docker Compose
@@ -138,37 +138,37 @@ alias dcom='docker compose'
 
 # 容器清理 todo zsh 下有问题
 # http://www.doublecloud.org/2015/05/simple-script-to-list-and-remove-all-stopped-docker-containers/
-function dkrm(){
-  if [ $# -lt 1 ]; then
-    ids=($(docker ps -aq --filter "status=exited"))
-  else
-    exit_code=${1:-0}
-    ids=($(docker ps -aq --filter "exited=${exit_code}"))
-  fi
-  if [ -n "$ids" ];then
-    echo "removing containers ids: $ids"
-    docker rm -v ${ids[*]}
-  fi
+function dkrm() {
+	if [ $# -lt 1 ]; then
+		ids=($(docker ps -aq --filter "status=exited"))
+	else
+		exit_code=${1:-0}
+		ids=($(docker ps -aq --filter "exited=${exit_code}"))
+	fi
+	if [ -n "$ids" ]; then
+		echo "removing containers ids: $ids"
+		docker rm -v ${ids[*]}
+	fi
 }
 
-function dkrmbyimg(){
-  docker rm `docker ps -aq -f='ancestor=$1'`
+function dkrmbyimg() {
+	docker rm $(docker ps -aq -f='ancestor=$1')
 }
 
 # 镜像清理
 #remove unused docker resources(stopped containers, untagged and dangling images, unused images)
 #https://stackoverflow.com/questions/32723111/how-to-remove-old-and-unused-docker-images
-function dkrmi(){
-  iids=$(docker images -f "dangling=true" -q)
-  if [ -n "$iids" ];then
-    docker rmi -f $iids
-    echo ==removed images $iids
-  fi
+function dkrmi() {
+	iids=$(docker images -f "dangling=true" -q)
+	if [ -n "$iids" ]; then
+		docker rmi -f $iids
+		echo ==removed images $iids
+	fi
 }
 
-dkclean(){
-  #docker system prune "$@" # -a
-  docker system prune -f
+dkclean() {
+	#docker system prune "$@" # -a
+	docker system prune -f
 }
 
 ## log message
@@ -181,9 +181,9 @@ dkclean(){
 #  docker run --rm -it logstash logstash -e 'input { kafka { zk_connect => "caerus.x:2000/kafka" group_id => "sensor" topic_id => "staging.normal" codec => plain } } output { stdout { codec => rubydebug } }'
 #}
 
-function container_by_name(){
-  dkname=$1
-  docker container ls --filter "name=$dkname" --quiet --all
+function container_by_name() {
+	dkname=$1
+	docker container ls --filter "name=$dkname" --quiet --all
 }
 
 # clean volume
@@ -222,40 +222,40 @@ function container_by_name(){
 # 主要精力研究docker on ubuntu, 和实际使用场景一致
 
 ## run nginx in docker
-function dkng(){
-  # todo 配置本地化
-  docker run -d --name dkng --rm -p 2080:80 nginx
+function dkng() {
+	# todo 配置本地化
+	docker run -d --name dkng --rm -p 2080:80 nginx
 }
 
-function dklogfile(){
-  conid=$1 #b299189c3e70
-  find /var/lib/docker/containers/${conid}*/*-json.log
+function dklogfile() {
+	conid=$1 #b299189c3e70
+	find /var/lib/docker/containers/${conid}*/*-json.log
 }
 
 # 容器中文环境
-function dkch(){
-  docker exec -it ubuntu env LANG=C.UTF-8 /bin/bash
+function dkch() {
+	docker exec -it ubuntu env LANG=C.UTF-8 /bin/bash
 }
 
 # 如何解决docker build 时的翻墙问题
-function dkbuild(){
-  fanqiang #设置翻墙proxy
-  # 通过build-arg可将外部环境变量传到容器中使用(注意当没定义这些环境变量时可能会报错哦！）
-  docker build --build-arg http_proxy --build-arg GEM_SOURCE "$@"
+function dkbuild() {
+	fanqiang #设置翻墙proxy
+	# 通过build-arg可将外部环境变量传到容器中使用(注意当没定义这些环境变量时可能会报错哦！）
+	docker build --build-arg http_proxy --build-arg GEM_SOURCE "$@"
 }
 
 export local_dk_registry=http://localhost:5000
 # curl http://localhost:5000/v2/_catalog
 # persist in /var/lib/registry in container as volume or mount on host, cloud storage driver
-function dkreg(){
-  /l/golab/gopath/bin/reg --registry $local_dk_registry --force-non-ssl "$@"
+function dkreg() {
+	/l/golab/gopath/bin/reg --registry $local_dk_registry --force-non-ssl "$@"
 }
 
 #http://guide.daocloud.io/dcs/docker-9153151.html
 # 专用加速地址：  http://9c506ecf.m.daocloud.io
 # daocloud.io/ubuntu
-function dkmirror(){
-  echo https://registry.docker-cn.com
+function dkmirror() {
+	echo https://registry.docker-cn.com
 }
 
 # docker pull registry.docker-cn.com/library/ubuntu
@@ -263,32 +263,32 @@ function dkmirror(){
 # docker pull daocloud.io/ubuntu
 # docker pull myregistrydomain:port/foo/bar
 # todo add more here
-function dkptest(){
-  img=${1:-alpine}
-  mirrors=(registry.docker-cn.com)
-  for mirror in ${mirrors[*]};do
-    aimg=$mirror/$img
-    echo ==test image: $aimg
-    time docker pull $aimg
-    docker rmi -f $aimg;
-  done
-  echo done
+function dkptest() {
+	img=${1:-alpine}
+	mirrors=(registry.docker-cn.com)
+	for mirror in ${mirrors[*]}; do
+		aimg=$mirror/$img
+		echo ==test image: $aimg
+		time docker pull $aimg
+		docker rmi -f $aimg
+	done
+	echo done
 }
 
 # test pull dk
-function dkgcr(){
-  echo docker pull gcr.io/google_containers/pause-amd64:3.0 # 194k
-  docker pull gcr.io/google_containers/pause-amd64:3.0 # 194k
+function dkgcr() {
+	echo docker pull gcr.io/google_containers/pause-amd64:3.0 # 194k
+	docker pull gcr.io/google_containers/pause-amd64:3.0      # 194k
 }
 
 # 列出该网络下所有容器
-dnetps(){
-  docker network inspect -f '{{ range $key, $value := .Containers }}{{ printf "%s\n" $value.Name }}{{ end }}' $@
+dnetps() {
+	docker network inspect -f '{{ range $key, $value := .Containers }}{{ printf "%s\n" $value.Name }}{{ end }}' $@
 }
 
-dklogin(){
-  [ $# -lt 1 ] && echo require password && return 1
-  echo $1 | docker login -u cao7113 --password-stdin
+dklogin() {
+	[ $# -lt 1 ] && echo require password && return 1
+	echo $1 | docker login -u cao7113 --password-stdin
 }
 
 # daocloud.io

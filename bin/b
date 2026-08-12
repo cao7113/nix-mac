@@ -41,6 +41,9 @@ function main() {
 	sv)
 		brew-services "$@"
 		;;
+	l | ls)
+		brew list "$@"
+		;;
 	*)
 		brew "$act" "$@"
 		;;

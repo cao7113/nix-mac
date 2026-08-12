@@ -63,6 +63,7 @@
         zstyle ':completion:*' use-cache yes
         zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/zcompcache"
 
+        # todo refactor to zsh/ ?
         export nix_mac_home="${config.home.homeDirectory}/${repo_path}";
         # zsh helpers from nix-mac
         source "$nix_mac_home/main.zsh"

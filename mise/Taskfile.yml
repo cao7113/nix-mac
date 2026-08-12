@@ -1,0 +1,65 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: echo hi mise
+
+  ex: mise x elixir@1.19.4-otp-28 -- elixir --version
+  erl: mise x erlang@28.3 -- erl -version
+  ls: mise ls # list
+  up: mise up # upgrade tools
+  core: mise registry -b core
+  
+  info: |
+    mise docter 
+    # cat ~/.config/mise/config.toml 
+    # echo $MISE_DATA_DIR
+    # ~/.local/share/mise
+
+  doc: |
+    mkdir -p _local && cd _local
+    mise help > help.txt
+    mise registry > registry.txt
+
+  ## Setup
+
+  setup: |
+    # Only install mise, not activate it!
+    # curl https://mise.run | MISE_INSTALL_PATH=~/.local/bin/mise sh
+    curl https://mise.run > _local/install.sh
+
+  # https://mise.jdx.dev/installing-mise.html#shell-specific-installation-activation
+  setup.zsh: |
+    # curl https://mise.run/zsh | sh
+    # Installs mise and adds activation to ~/.zshrc
+
+    curl https://mise.run/zsh > _local/install-for-zsh.sh
+    # sh ./install.sh
+
+    # Options:
+    # MISE_DEBUG=1 – enable debug logging
+    # MISE_QUIET=1 – disable non-error output
+    # MISE_INSTALL_PATH=/some/path – change the binary path (default: ~/.local/bin/mise)
+    # MISE_VERSION=v2025.12.0 – install a specific version
+    # MISE_INSTALL_SKIP_IF_EXISTS=1 – skip the download/install if the mise binary at the install path already matches the requested version
+    
+  setup.sig: |
+    gpg --keyserver hkps://keys.openpgp.org --recv-keys 24853EC9F655CE80B48E6C3A8B81C9D17413A06D
+    curl https://mise.jdx.dev/install.sh.sig | gpg --decrypt > _local/install-with-sig.sh
+    # ensure the above is signed with the mise release key
+    # sh ./install.sh
+
+  check: |
+    curl https://mise.run > a.sh
+    curl -fsSL https://mise.jdx.dev/install.sh > b.sh
+    diff -s a.sh b.sh
+    rm a.sh b.sh
+
+  setup.brew: |
+    brew install mise
+  
+  setup.cargo: |
+    cargo install mise
+
+  # uninstall
+  # https://mise.jdx.dev/installing-mise.html#uninstalling
