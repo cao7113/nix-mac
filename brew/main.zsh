@@ -1,3 +1,3 @@
-# alias brewcmd="command brew"
+# brew helpers
 
-# ref bin/b for brew wrapper
+alias b=brew-wrapper # from bin/

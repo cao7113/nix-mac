@@ -1,6 +1,6 @@
 # Notice: mise alreay is a shell-functon and command, so here we named it m
 
-alias m=mise-wrapper
+alias m="mise-wrapper"
 
 function mise-wrapper() {
 	local act=$1
@@ -47,7 +47,7 @@ function mise-wrapper() {
 		# mise config get tools
 		;;
 
-	setup)
+	setup | self-install)
 		echo "## Only setup mise bin"
 		local bin_path=~/.local/bin/mise
 		curl https://mise.run | MISE_DEBUG=1 MISE_INSTALL_SKIP_IF_EXISTS=1 MISE_INSTALL_PATH=$bin_path sh
@@ -55,6 +55,10 @@ function mise-wrapper() {
 
 		# reload to activate hooks
 		source $this_rc
+		;;
+	info)
+		echo "MISE_CONFIG_DIR=$MISE_CONFIG_DIR"
+		# which mise
 		;;
 
 	# Already support
@@ -85,7 +89,7 @@ function mise-wrapper() {
 if command -v mise &>/dev/null; then
 	# https://mise.jdx.dev/directories.html#config-mise
 	# Default: ${XDG_CONFIG_HOME:-$HOME/.config}/mise
-	export MISE_CONFIG_DIR=$this_dir
+	export MISE_CONFIG_DIR=$(mise-wrapper home)
 
 	echo "# Activating mise hooks..."
 	eval "$(mise activate zsh)"
