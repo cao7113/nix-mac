@@ -25,3 +25,4 @@ nohup.out
 .direnv
 
 fnox.local.toml
+.claude/settings.local.json

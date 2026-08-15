@@ -14,7 +14,9 @@ function dns() {
 	c | clear | clear-cache)
 		dns-clear-cache "$@"
 		;;
-
+	q)
+		dnsmasq "$@"
+		;;
 	vi)
 		vi $this_script
 		;;
@@ -25,10 +27,6 @@ function dns() {
 		type -f dns
 		;;
 	esac
-}
-
-function routes() {
-	netstat -nr
 }
 
 function dns-clear-cache() {
@@ -43,15 +41,17 @@ function wifi() {
 	local this_script="${${(%):-%x}}"
 	local this_dir=${this_script:A:h}
 
+	local name=Wi-Fi
+
 	case "$act" in
 	dns)
-		networksetup -getdnsservers Wi-Fi
+		networksetup -getdnsservers $name
 		;;
 	set-dns)
-		sudo networksetup -setdnsservers Wi-Fi "$@"
+		sudo networksetup -setdnsservers $name "$@"
 		;;
 	reset-dns)
-		sudo networksetup -setdnsservers Wi-Fi empty # "Empty"
+		sudo networksetup -setdnsservers $name empty # "Empty"
 		;;
 
 	vi)
@@ -61,7 +61,11 @@ function wifi() {
 		cd $this_dir
 		;;
 	*)
-		type -f wifi
+		type -f ${funcstack[1]}
 		;;
 	esac
+}
+
+function routes() {
+	netstat -nr
 }

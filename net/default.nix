@@ -8,6 +8,7 @@
 }:
 {
   imports = [
+    ./dns/dnsmasq
     ./wireguard
   ];
 
