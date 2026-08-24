@@ -9,6 +9,7 @@
 {
   imports = [
     ./dns/dnsmasq
+    ./port80
     ./wireguard
   ];
 

@@ -31,6 +31,9 @@ function mise-wrapper() {
 	s | q | query)
 		mise search "$@"
 		;;
+	vb | debug)
+		MISE_VERBOSE=1 mise "$@"
+		;;
 	gen)
 		mise generate "$@"
 		# mise generate config	# 超级强
@@ -48,10 +51,9 @@ function mise-wrapper() {
 		;;
 
 	setup | self-install)
-		echo "## Only setup mise bin"
 		local bin_path=~/.local/bin/mise
+		echo "## Setup mise bin as $bin_path"
 		curl https://mise.run | MISE_DEBUG=1 MISE_INSTALL_SKIP_IF_EXISTS=1 MISE_INSTALL_PATH=$bin_path sh
-		echo "Installed into $MISE_INSTALL_PATH"
 
 		# reload to activate hooks
 		source $this_rc

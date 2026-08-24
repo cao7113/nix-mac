@@ -424,7 +424,7 @@ function cmd_remove() {
 function cmd_readd() {
 	local src_file=$1
 	if [[ -z "$src_file" || ! -f "$src_file" ]]; then
-		echo "❌ 错误: 请指定有效的 plist 文件路径。"
+		echo "❌ 错误: 请指定有效的 plist 文件路径: lctl readd /path/to/plist"
 		exit 1
 	fi
 

@@ -49,8 +49,8 @@ fi
 # 注意homebrew版本的curl和mac自带的/usr/bin/curl存在差异，如在使用系统证书，sslkeylog支持等
 # 基于 curl 的 外交官属性（通过 -w 或 --write-out 参数格式化输出时间指标），能够非常详细地拆解出 DNS 解析、TCP 握手、TLS 握手、首字节响应以及总下载时间，并自动计算出下载速度。
 
-function wurl() {
-	echo "# Use curl mock wget"
+function cget() {
+	echo "# mock wget by curl"
 	curl -L -O "$@"
 }
 

@@ -1,6 +1,7 @@
 # mise global config
 [tool_alias]
 sbox = "github:sagernet/sing-box"
+gater-client = "github:cao7113/gater"
 
 [tools]
 usage = "latest"
@@ -9,11 +10,18 @@ bun = "1.3.14"
 erlang = "29.0.3"
 elixir = "1.20.2-otp-29"
 sbox = { version = "1.14.0-beta.14", prerelease = "true" }
+go = "1.26.6"
+"github:cao7113/gater" = "latest"
+
+[tools.gater-client]
+version = "latest"
+matching = "gater-client"
 
 [settings]
 experimental = true
 status.show_env = true
-asdf_compat = true
+minimum_release_age = "0"
+# asdf_compat = true
 
 [settings.github]
 use_git_credentials = true

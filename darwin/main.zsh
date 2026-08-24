@@ -1,15 +1,15 @@
 # Mac helpers
-
 # top -o cpu
 
-# launchd services
 alias chongqi="sudo launchctl reboot"
-# pecify a time in minutes (e.g., +5 for 5 minutes from now) or a specific time in yymmddhhmm format
-# sudo launchctl reboot halt or sudo launchctl reboot shutdown
+
+# specify a time in minutes (e.g., +5 for 5 minutes from now) or a specific time in yymmddhhmm format
 alias guanji="sudo shutdown -h now"
+alias guanji="sudo launchctl reboot shutdown"
+alias guanji="sudo launchctl reboot halt"
 
 alias lc="lctl"
-alias agent="lctl"
+# alias lagent="lctl"
 alias daemon="sudo lctl"
 
 # config home
