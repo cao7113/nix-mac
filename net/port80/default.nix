@@ -18,7 +18,7 @@
 
   # 2. 创建自定义 PF 规则文件
   environment.etc."pf.anchors/lab.port80.pf.conf".text = ''
-    rdr pass on lo0 inet proto tcp from any to any port 80 -> 127.0.0.1 port 8888
+    rdr pass log on lo0 inet proto tcp from any to any port 80 -> 127.0.0.1 port 8888
   '';
 
   # 3. 创建系统级守护进程（root权限）在开机时加载 PF 规则

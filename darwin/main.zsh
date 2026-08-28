@@ -11,6 +11,7 @@ alias guanji="sudo launchctl reboot halt"
 alias lc="lctl"
 # alias lagent="lctl"
 alias daemon="sudo lctl"
+alias dmn="sudo lctl"
 
 # config home
 # ~/Library/Application Support/ or ~/.config

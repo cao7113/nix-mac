@@ -41,8 +41,8 @@
   system.defaults.smb.NetBIOSName = "mac";
 
   imports = [
+    ./_pkgs.nix
     ./defaults.nix
-    ./pkgs.nix
     # launchd/daemons/test.nix
   ];
 

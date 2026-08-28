@@ -12,6 +12,7 @@ elixir = "1.20.2-otp-29"
 sbox = { version = "1.14.0-beta.14", prerelease = "true" }
 go = "1.26.6"
 "github:cao7113/gater" = "latest"
+caddy = "latest"
 
 [tools.gater-client]
 version = "latest"

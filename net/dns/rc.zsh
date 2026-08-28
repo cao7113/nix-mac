@@ -1,11 +1,14 @@
 # dns helper
 
+# dscacheutil -q host -a name lh
+# dig @127.0.0.1 lh
+
 function dns() {
 	local act=$1
 	(($# > 0)) && shift
 
-	local this_script="${${(%):-%x}}"
-	local this_dir=${this_script:A:h}
+	local this_rc="${${(%):-%x}}"
+	local this_dir=${this_rc:A:h}
 
 	case "$act" in
 	l | ls)
@@ -17,8 +20,11 @@ function dns() {
 	q)
 		dnsmasq "$@"
 		;;
+	r | resolver)
+		ls -al /etc/resolver/
+		;;
 	vi)
-		vi $this_script
+		vi $this_rc
 		;;
 	j)
 		cd $this_dir
@@ -38,8 +44,8 @@ function wifi() {
 	local act=$1
 	(($# > 0)) && shift
 
-	local this_script="${${(%):-%x}}"
-	local this_dir=${this_script:A:h}
+	local this_rc="${${(%):-%x}}"
+	local this_dir=${this_rc:A:h}
 
 	local name=Wi-Fi
 
@@ -55,7 +61,7 @@ function wifi() {
 		;;
 
 	vi)
-		vi $this_script
+		vi $this_rc
 		;;
 	j)
 		cd $this_dir

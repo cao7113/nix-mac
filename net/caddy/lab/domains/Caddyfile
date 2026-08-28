@@ -1,0 +1,19 @@
+{
+  admin localhost:2019
+}
+
+# 1. 走 HTTPS 的域名组（使用内部 CA 生成证书）
+*.lab.s, admin.lab {
+  tls internal
+  reverse_proxy 127.0.0.1:8888
+}
+
+# 2. 仅走纯 HTTP 的 *.lab 域名组
+http://*.lab {
+  # 排除已经被上面 HTTPS 处理过的 admin.lab，防止 HTTP 监听冲突
+  @onlyHttpHost not host admin.lab
+  
+  handle @onlyHttpHost {
+    reverse_proxy 127.0.0.1:8888
+  }
+}

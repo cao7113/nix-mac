@@ -8,6 +8,9 @@ function net() {
 	(($# > 0)) && shift
 
 	case "$act" in
+	cad)
+		cd $net_rc_dir/caddy
+		;;
 	j | cd)
 		cd $net_rc_dir
 		;;
@@ -37,6 +40,7 @@ function net() {
 }
 
 source $net_rc_dir/proxy.zsh
+source $net_rc_dir/caddy/rc.zsh
 
 if ((${+functions[source_dir_files]})); then
 	# DEBUG=1 DRY=1

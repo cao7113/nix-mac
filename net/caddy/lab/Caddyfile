@@ -1,0 +1,11 @@
+{
+    # 显式关闭默认的公网 ACME 自动申请，避免它尝试去连接 Let's Encrypt / ZeroSSL
+    auto_https disable_redirects
+}
+
+*.lab {
+    # 强制让 Caddy 使用内置 Local CA 签发泛域名证书
+    tls internal
+
+    respond "Hello from Caddy Wildcard SSL (*.lab)"
+}

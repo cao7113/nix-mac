@@ -1,0 +1,5 @@
+localhost
+encode
+templates
+# respond "Hello, world!"
+file_server browse

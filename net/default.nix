@@ -7,9 +7,16 @@
   ...
 }:
 {
+  environment.systemPackages = with pkgs; [
+    # 注意：Nix 安装的 curl 会覆盖macOS 自带的 /usr/bin/curl，可能会导致一些问题(如证书信用链，可通过环境变量SSL_CERT_FILE解决）)。
+    # CURL_CA_BUNDLE to the path of your choice. SSL_CERT_FILE and SSL_CERT_DIR are also supported
+    curl
+  ];
+
   imports = [
     ./dns/dnsmasq
-    ./port80
+    # ./port80
+    ./caddy
     ./wireguard
   ];
 
@@ -29,8 +36,6 @@
   };
 
   # home-manager.users.${username} = {
-  #   programs.xxx = {
-  #   };
   # };
 
 }
