@@ -18,8 +18,8 @@ function nix() {
 	local act=$1
 	(($# > 0)) && shift
 
-	local this_script="${(%):-%x}"
-	local this_dir=${this_script:A:h}
+	local this_rc="${(%):-%x}"
+	local this_dir=${this_rc:A:h}
 
 	case $act in
 	j | cd)
@@ -32,7 +32,7 @@ function nix() {
 		nixcmd --help "$@"
 		;;
 	i | info)
-		echo "this_script=$this_script"
+		echo "this_rc=$this_rc"
 		echo "this_dir=$this_dir"
 		;;
 	ps)

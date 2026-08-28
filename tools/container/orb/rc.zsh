@@ -5,19 +5,19 @@ alias orbcmd="command orb"
 
 function orb() {
 	local act=$1
-	(( $# > 0 )) && shift
+	(($# > 0)) && shift
 
-	local this_script="${(%):-%x}"
-	local this_dir=${this_script:A:h}
+	local this_rc="${(%):-%x}"
+	local this_dir=${this_rc:A:h}
 
 	case $act in
-	j|cd)
+	j | cd)
 		cd $this_dir
 		;;
 	home)
 		echo $this_dir
 		;;
-	l|ls|m|machine)
+	l | ls | m | machine)
 		orbcmd list
 		;;
 	dk.log)

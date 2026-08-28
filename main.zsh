@@ -13,8 +13,8 @@ function nix-mac() {
 	local act=$1
 	(($# > 0)) && shift
 
-	local this_script="${(%):-%x}"
-	local this_dir=${this_script:A:h}
+	local this_rc="${(%):-%x}"
+	local this_dir=${this_rc:A:h}
 
 	case $act in
 	home)
@@ -104,8 +104,8 @@ source $nix_mac_home/tools/main.zsh
 # 	local act=$1
 # 	(($# > 0)) && shift
 
-# 	local this_script="${(%):-%x}"
-# 	local this_dir=${this_script:A:h}
+# 	local this_rc="${(%):-%x}"
+# 	local this_dir=${this_rc:A:h}
 
 # 	case $act in
 # 	j | cd)

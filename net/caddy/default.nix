@@ -10,6 +10,7 @@
 
   # /etc/caddy/Caddyfile 配置 Caddy 监听 80/443 并反向代理到
   # not support *.lab tld
+  # NOTE: restart caddy service after change this config!!!
   environment.etc."caddy/Caddyfile".text = ''
     {
       admin localhost:2019

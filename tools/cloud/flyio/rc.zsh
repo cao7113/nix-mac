@@ -8,8 +8,8 @@ function fly() {
 	local act=${1}
 	(($# > 0)) && shift
 
-	local this_script="${(%):-%x}"
-	local this_dir=${this_script:h}
+	local this_rc="${(%):-%x}"
+	local this_dir=${this_rc:h}
 
 	case "$act" in
 	st)
@@ -45,7 +45,7 @@ function fly() {
 		cd $this_dir
 		;;
 	vi)
-		vi $this_script
+		vi $this_rc
 		;;
 	what)
 		type -f fly

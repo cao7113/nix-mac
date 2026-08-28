@@ -5,8 +5,8 @@ function wg-wrapper() {
 	local act=$1
 	(($# > 0)) && shift
 
-	local this_script="${${(%):-%x}}"
-	local this_dir=${this_script:A:h}
+	local this_rc="${${(%):-%x}}"
+	local this_dir=${this_rc:A:h}
 
 	# /usr/local/etc/wireguard/INTERFACE.conf
 	local conf_home=/usr/local/etc/wireguard
@@ -70,7 +70,7 @@ function wg-wrapper() {
 		echo $conf_home
 		;;
 	vi)
-		vi $this_script
+		vi $this_rc
 		;;
 	j)
 		cd $this_dir
