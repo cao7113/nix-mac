@@ -3,6 +3,7 @@
 实现 HTTPS，并自动信任本地 TLS 证书
 
 
+
 ```
 # nix installed curl
 export SSL_CERT_FILE="$HOME/Library/Application Support/Caddy/pki/authorities/local/root.crt"
@@ -16,6 +17,9 @@ curl  https://foo.a.lab
 ## Trust
 
 ```
+# 应用 Nix 配置并启动 Caddy 后，运行以下命令将 Caddy 的根证书一次性导入 macOS 信任链
+# sudo caddy trust
+
 ❯ sudo caddy trust
 2026/08/24 14:27:36.920 WARN    installing root certificate (you might be prompted for password)        {"path": "localhost:2019/pki/ca/local"}
 2026/08/24 14:27:36.953 INFO    warning: "certutil" is not available, install "certutil" with "brew install nss" and try again

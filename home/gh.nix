@@ -24,6 +24,7 @@
           ;;
         cl|clone)
           # gh-smart-clone "$@"
+          # 好处：会带着上游upstream信息
           gh repo clone "$@"
           ;;
         remote)

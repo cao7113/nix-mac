@@ -21,7 +21,10 @@ function dns() {
 		dnsmasq "$@"
 		;;
 	r | resolver)
-		ls -al /etc/resolver/
+		(
+		  set -x
+		  ls -al /etc/resolver/
+  )
 		;;
 	vi)
 		vi $this_rc

@@ -1,4 +1,6 @@
-function cad() {
+alias cdy="caddy-wrapper"
+
+function caddy-wrapper() {
 	local act="$1"
 	(($# > 0)) && shift
 
@@ -7,13 +9,17 @@ function cad() {
 
 	local caddy_dir="$HOME/Library/Application Support/Caddy"
 	local local_root_cert="$caddy_dir/pki/authorities/local/root.crt"
+	local conf_file=/etc/caddy/Caddyfile
 
 	case "$act" in
 	i | info)
 		echo "root cert: $local_root_cert"
 		;;
 	run)
-		caddy run --watch --config ./Caddyfile
+		sudo caddy run --watch --config ./Caddyfile
+		;;
+	reup)
+		sudo lctl reup org.nixos.caddy
 		;;
 	log)
 		tail -f -n 200 /var/log/caddy.*
@@ -25,7 +31,7 @@ function cad() {
 		caddy fmt --overwrite "$@"
 		;;
 	conf)
-		cat /etc/caddy/Caddyfile
+		cat $conf_file
 		;;
 	setup)
 		sudo caddy trust
@@ -39,6 +45,14 @@ function cad() {
 		pkill caddy
 		rm -rf "$HOME/Library/Application Support/Caddy/certificates"
 		rm -rf "$HOME/Library/Application Support/Caddy/pki"
+		;;
+
+	certs)
+		sudo ls -l "$HOME/Library/Application Support/Caddy/certificates/local/"
+		;;
+
+	vi)
+		vi $this_rc
 		;;
 	j)
 		cd "$this_dir"

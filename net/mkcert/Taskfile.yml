@@ -1,0 +1,24 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: echo hi mkcert
+
+  # sign
+  # 因为 TLS/X.509 规范和 Chromium 源码（Baseline Requirements）中强制禁止了顶级通配符（TLD-level wildcard，如 *.s），浏览器在解析证书的 SAN（Subject Alternative Name）时，看到通配符直接挂在顶级域名下就会硬编码拒绝。
+  # ❯ mkcert "*.s" admin.lab    
+  # Created a new certificate valid for the following names 📜
+  # - "*.s"
+  #   Warning: many browsers don't support second-level wildcards like "*.s" ⚠️
+  # - "admin.lab"
+  # Reminder: X.509 wildcards only go one level deep, so this won't match a.b.s ℹ️
+  # The certificate is at "./_wildcard.s+1.pem" and the key at "./_wildcard.s+1-key.pem" ✅
+  # It will expire on 3 December 2028 🗓
+
+  install: |
+    mkcert -install
+    # mkcert -uninstall
+
+  setup: |
+    mise use -g mkcert
+

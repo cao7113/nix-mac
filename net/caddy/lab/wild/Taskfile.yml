@@ -4,5 +4,5 @@ version: '3'
 tasks:
   default: echo hi task
 
-
-
+  run: |
+    sudo caddy run --watch --config ./Caddyfile
