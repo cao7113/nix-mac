@@ -3,6 +3,7 @@
 sbox = "github:sagernet/sing-box"
 gater = "github:cao7113/gater"
 gater-client = "github:cao7113/gater"
+kc-util = "github:cao7113/kc-util"
 
 [tools]
 usage = "latest"
@@ -12,14 +13,12 @@ elixir = "1.20.2-otp-29"
 go = "1.26.6"
 gater = "latest"
 mkcert = "latest"
+swift = "latest"
+kc-util = "latest"
 
 [tools.sbox]
 version = "1.14.0-beta.14"
 prerelease = "true"
-
-[tools.gater-client]
-version = "latest"
-matching = "gater-client"
 
 [settings]
 experimental = true

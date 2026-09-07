@@ -3,7 +3,3 @@
 version: '3'
 tasks:
   default: echo hi task
-
-  cert.test: |
-    # curl --cacert ./local_root.crt https://test.lab
-    curl -i --cacert "$HOME/Library/Application Support/Caddy/pki/authorities/local/root.crt" https://demo.lab

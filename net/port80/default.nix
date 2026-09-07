@@ -5,7 +5,7 @@
   ...
 }:
 {
-  # 配合dnsmasq的 *.lab 域名方便本地访问使用，如 http://admin.lab
+  # 配合dnsmasq的 *.lab 域名方便本地访问使用，如 http://admin.s
   # 查看配置效果
   # sudo pfctl -s nat
   # # rdr pass on lo0 inet proto tcp from any to any port = 80 -> 127.0.0.1 port 8888
@@ -13,7 +13,7 @@
 
   # 1. 确保 Hosts 映射正确, use dnsmasq instead
   # networking.hosts = ''
-  #   127.0.0.1 admin.lab
+  #   127.0.0.1 admin.s
   # '';
 
   # 2. 创建自定义 PF 规则文件

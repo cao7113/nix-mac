@@ -1,0 +1,10 @@
+# https://taskfile.dev/docs/guide
+# https://taskfile.dev/reference/templating/
+version: '3'
+tasks:
+  default: |
+    # https://localhost:2345
+    caddy run 
+
+  fs: |
+    caddy file-server --browse --listen :8080

@@ -1,0 +1,9 @@
+{
+	  # default is 2019
+    admin localhost:2020
+}
+
+# http://localhost:2345
+localhost:2345 {
+	respond "Hello, world!"
+}

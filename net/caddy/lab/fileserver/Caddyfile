@@ -1,5 +1,12 @@
-localhost
-encode
-templates
-# respond "Hello, world!"
-file_server browse
+{
+	  # default is 2019
+    admin localhost:2020
+}
+
+# http://localhost
+localhost:2345 {
+	encode
+	templates
+	# respond "Hello, world!"
+	file_server browse
+}

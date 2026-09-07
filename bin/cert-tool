@@ -1,0 +1,5 @@
+#!/bin/zsh
+set -euo pipefail
+
+# certtool d /var/lib/caddy/data/caddy/pki/authorities/local/root.crt
+# sudo openssl x509 -noout -fingerprint -sha1 -in /var/lib/caddy/data/caddy/pki/authorities/local/root.crt | sed 's/^.*=//' |  tr -d ':'

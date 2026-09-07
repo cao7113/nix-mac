@@ -6,6 +6,8 @@
   ...
 }:
 {
+  # gh repo list --language Swift
+
   # gh: GitHub CLI https://cli.github.com/
   # run with local proxy:
   # gh login # generate local ssh keys as prompts

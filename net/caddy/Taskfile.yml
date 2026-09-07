@@ -4,5 +4,9 @@ version: '3'
 tasks:
   default: echo hi caddy
 
+  admin.json: |
+    curl -L http://localhost:2019/config/ | jq > _local-admin.json
+
   setup: 
+    # test
     mise use -g caddy

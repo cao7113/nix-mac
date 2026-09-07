@@ -10,7 +10,7 @@
     # 将此 Root CA 导入 macOS Keychain 并信任后，所有由该 CA 动态签发的本地单域名证书均会被系统与浏览器无缝信任。
     pki {
         ca local {
-            name "Local Dev CA"
+            name "Caddy Local Dev CA"
         }
     }
 
@@ -22,6 +22,17 @@
     on_demand_tls {
         ask http://127.0.0.1:9111
     }
+    
+    # default is 2019
+    admin localhost:2020
+}
+
+# http://caddy.test.h
+caddy.test.h {
+  tls {
+    issuer internal
+  }
+  respond "Caddy OK!"
 }
 
 # =========================================================================
