@@ -131,6 +131,7 @@
         al = "alias list";
         login = "auth login";
         logout = "auth logout";
+        rename = "repo rename";
         # gh ssh list
         ssh = "ssh-key";
         pco = "pr checkout";

@@ -19,7 +19,6 @@
   home-manager.users.${username} =
     { config, ... }:
     {
-
       # home.file.".config/mise/config.toml".text = ''
       #   copy config.toml content here, but it will be hard to maintain, so use source instead
       # '';

@@ -3,6 +3,7 @@ version: "3"
 # https://gist.github.com/ogrrd/5831371
 tasks:
   help: /opt/homebrew/sbin/dnsmasq --help
+  
   conf: |
     less /opt/homebrew/etc/dnsmasq.conf
     # /opt/homebrew/etc/dnsmasq.conf -7 /opt/homebrew/etc/dnsmasq.d,\*.conf

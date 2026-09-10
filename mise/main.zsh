@@ -34,6 +34,9 @@ function mise-wrapper() {
 	vb | debug)
 		MISE_VERBOSE=1 mise "$@"
 		;;
+	bins)
+		mise bin-paths "$@"
+		;;
 	gen)
 		mise generate "$@"
 		# mise generate config	# 超级强
@@ -43,7 +46,10 @@ function mise-wrapper() {
 		mise trust "$@"
 		;;
 	up)
-		mise self-update
+		mise upgrade --prune "$@" # -b --bump --local --prune
+		;;
+	up.self)
+		mise self-upgrade "$@"
 		;;
 	global | global.conf)
 		vi $this_dir/config.toml

@@ -15,28 +15,6 @@ mise supports nested configuration files that cascade from broad to specific set
 ~/work/project/mise.local.toml - Project-specific settings that should not be shared
 ```
 
-## Github rate-limit
-
-- https://mise.jdx.dev/dev-tools/backends/github.html#github.use_git_credentials
-
-原因：gh token 存在 macOS Keychain，mise 默认不会通过 Git 的 Keychain helper 读取它。你的 Git 已配置 osxkeychain，只需启用 mise 的该回退机制：
-
-```
-mise settings set github.use_git_credentials true
-mise token github
-
-❯ mise tool sing-box
-mise WARN  GitHub rate limit exceeded. Resets at 2026-08-12 11:44:13 +08:00
-Backend:            github:sagernet/sing-box
-Installed Versions:
-Tool Options:       [none]
-Security:           [none]
-
-~/tmp
-❯ mise token github
-github.com: (none)
-```
-
 ## prerelease版本安装
 
 可以直接指定 alpha/beta 的版本号；`github:` 后端会自动处理 Git tag 常见的 `v` 前缀：
@@ -73,6 +51,39 @@ prerelease = true
 ```
 
 `prerelease = true` 影响 `latest`、模糊版本匹配和 `mise ls-remote`；安装像 `1.14.0-alpha.50` 这样的精确版本时通常不需要它。参考 [mise GitHub backend 的 prerelease 配置](https://mise.jdx.dev/dev-tools/backends/github.html)。
+
+## Used in launchd agent
+
+```
+本地是按以下方式安装的mise
+local bin_path=~/.local/bin/mise
+echo "## Setup mise bin as $bin_path"
+curl https://mise.run | MISE_DEBUG=1 MISE_INSTALL_SKIP_IF_EXISTS=1 MISE_INSTALL_PATH=$bin_path sh
+
+如何在launchd agent环境下使用mise，并激活相关应用，比如进入某个含mise.toml的目录，自动激活相关 脚本
+```
+
+## Github rate-limit
+
+- https://mise.jdx.dev/dev-tools/backends/github.html#github.use_git_credentials
+
+原因：gh token 存在 macOS Keychain，mise 默认不会通过 Git 的 Keychain helper 读取它。你的 Git 已配置 osxkeychain，只需启用 mise 的该回退机制：
+
+```
+mise settings set github.use_git_credentials true
+mise token github
+
+❯ mise tool sing-box
+mise WARN  GitHub rate limit exceeded. Resets at 2026-08-12 11:44:13 +08:00
+Backend:            github:sagernet/sing-box
+Installed Versions:
+Tool Options:       [none]
+Security:           [none]
+
+~/tmp
+❯ mise token github
+github.com: (none)
+```
 
 ## Links
 
