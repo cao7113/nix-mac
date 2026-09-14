@@ -42,7 +42,7 @@
           ;;
         *)
           # 其他 gh 子命令正常调用
-          ghcmd "$act" "$@"
+          ghcmd $act "$@"
           ;;
       esac
     }

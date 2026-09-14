@@ -1,8 +1,41 @@
-# Git help
-# git help -a
-# git help -g
-# git help everyday
-# GIT_TRACE=1 GIT_CURL_VERBOSE=1 git pull
+# Git helpers
+
+# https://github.com/ohmyzsh/ohmyzsh/blob/master/plugins/git/git.plugin.zsh#L322
+# "ohmyzsh/ohmyzsh path:plugins/git" # 引入 OMZ 的 git 插件（提供 gst, gco 等大量别名）
+
+alias g=git-wrapper
+
+function git-wrapper() {
+	local act=$1
+	(($# > 0)) && shift
+
+	local this_rc="${(%):-%x}"
+	local this_dir=${this_rc:A:h}
+
+	case "$act" in
+	t | test)
+		cd "$(ops home)/test-git"
+		;;
+	j.cog)
+		cd $this_dir/cog
+		;;
+	j)
+		cd $this_dir
+		;;
+	home)
+		echo "$this_dir"
+		;;
+	*)
+		git $act "$@"
+		;;
+	esac
+}
+
+source "$(git-wrapper home)/gh/rc.zsh"
+source "$(git-wrapper home)/cog/rc.zsh"
+
+alias og="gbo"
+alias gtag="git-tag"
 
 function git_current_branch() {
 	git rev-parse --abbrev-ref HEAD 2>/dev/null
@@ -22,6 +55,104 @@ function lclone() {
 		cd _local
 		git clone --depth 1 "$@"
 	)
+}
+
+function git-tag() {
+	local act=$1
+	(($# > 0)) && shift
+
+	# local this_rc="${(%):-%x}"
+	# local this_dir=${this_rc:A:h}
+
+	case "$act" in
+	l | ls | list)
+		git tag
+		# git tag -l "v1.*"
+		# 查看包含特定 Commit 的 Tag（排查某个 Bug 在哪个版本包含）
+		# git tag --contains <commit_hash>
+		;;
+	del | rm)
+		git tag -d "$@"
+		;;
+	bump)
+		# todo 本地根据 convertional commits bump version and tag
+		;;
+	mk | create)
+		git tag "$@"
+		# # 基于当前分支最新的 Commit 创建
+		# git tag v1.0.0-light
+		# # 基于历史某个 Commit 创建
+		# git tag v0.9.0 9fceb02
+		;;
+	a)
+		# annotated tag: git tag -a v0.1.0 -m "xxx"
+		if (($# == 0)); then
+			echo "Require tag_name"
+			type -f ${funcstack[1]}
+			return 1
+		fi
+		local tag_name="$1"
+		shift
+
+		git tag -a "$tag_name" "$@"
+		;;
+
+	show)
+		git show "$@"
+		# gh release view v0.1.0
+		;;
+	# force)
+	# 	git tag -f <tag_name> [commit_id]` *(强制覆盖本地)
+	#   git push origin -f <tag_name>` *(强制覆盖远程)*
+	# 	;;
+	r | remote)
+		git-tag-remote "$@"
+		;;
+
+	fun)
+		type -f ${funcstack[1]}
+		;;
+	*)
+		git tag $act "$@"
+		;;
+	esac
+}
+
+function git-tag-remote() {
+	local act=$1
+	(($# > 0)) && shift
+
+	case "$act" in
+	l | ls)
+		# gh release list
+		local remote="${1:-origin}"
+		git ls-remote --tags ${remote}
+		;;
+	rm | del)
+		# gh release delete <tag_name> --cleanup-tag
+		local tag="$1"
+		local remote="${2:-origin}"
+		git push ${remote} --delete $tag
+		;;
+	ps | push)
+		local tag="$1"
+		local remote="${2:-origin}"
+		git push "$remote" "$tag"
+		;;
+	psa | push.all)
+		local remote="${1:-origin}"
+		git push "$remote" --tags
+		;;
+	pl | pull)
+		local remote="${1:-origin}"
+		git fetch "$remote" --tags
+		;;
+	pull.tag)
+		local tag="$1"
+		local remote="${2:-origin}"
+		git fetch "$remote" "refs/tags/$tag:refs/tags/$tag"
+		;;
+	esac
 }
 
 function git-log() {
@@ -147,4 +278,3 @@ function gbo() {
 	# 太慢，每次都要请求github api，尽量从本地读取！！！
 	# GH_DEBUG=api gh browse -n
 }
-alias og="gbo"

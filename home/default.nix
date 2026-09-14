@@ -60,12 +60,11 @@
 
     imports = [
       ./_pkgs.nix
-      ../zsh
-      ./git.nix
-      ./gh.nix
       ./dotfiles.nix
-      ./vim.nix
       ./dot-sec.nix
+      ../zsh
+      ../git
+      ./vim.nix
     ];
   };
 

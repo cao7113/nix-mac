@@ -31,9 +31,6 @@
       j = "z";
       cat = "bat";
 
-      # 效率工具
-      g = "git";
-
       # Docker
       dk = "docker";
       dkc = "docker-compose";
@@ -92,8 +89,11 @@
 
         # 2. 功能类插件
         # "getantidote/use-omz" # 兼容层：允许只引用 OMZ 的部分功能而不加载全家桶
+
+        # todo 与 git 模块很多冲突，暂时屏蔽！
         # https://github.com/ohmyzsh/ohmyzsh/blob/master/plugins/git/git.plugin.zsh#L322
-        "ohmyzsh/ohmyzsh path:plugins/git" # 引入 OMZ 的 git 插件（提供 gst, gco 等大量别名）
+        # "ohmyzsh/ohmyzsh path:plugins/git" # 引入 OMZ 的 git 插件（提供 gst, gco 等大量别名）
+
         "ohmyzsh/ohmyzsh path:plugins/extract" # 一个 'extract' 命令解压所有格式
         "ohmyzsh/ohmyzsh path:plugins/sudo" # 按两次 Esc 自动加 sudo
 

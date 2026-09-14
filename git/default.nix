@@ -21,8 +21,9 @@
       # 核心运行时设置
       core = {
         autocrlf = "input"; # 自动处理换行符 (macOS/Linux 推荐)
-        # git config --global core.excludesfile
+
         # todo soft-link and daily edit
+        # git config --global core.excludesfile
         excludesfile = "${./git-ignores.txt}";
       };
 
@@ -108,4 +109,9 @@
       line-numbers = true;
     };
   };
+
+  imports = [
+    ./gh
+    ./cog
+  ];
 }
