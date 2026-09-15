@@ -15,12 +15,12 @@ function git-wrapper() {
 	j.cog)
 		cog-wrapper j
 		;;
-  omz)
-    # "ohmyzsh/ohmyzsh path:plugins/git" # 引入 OMZ 的 git 插件（提供 gco 等大量别名）
-    open "https://github.com/ohmyzsh/ohmyzsh/blob/master/plugins/git/git.plugin.zsh#L322"
-    # 定义了 alias g
-    echo "todo now overwrite them as own need"
-    ;;
+	omz)
+		# "ohmyzsh/ohmyzsh path:plugins/git" # 引入 OMZ 的 git 插件（提供 gco 等大量别名）
+		open "https://github.com/ohmyzsh/ohmyzsh/blob/master/plugins/git/git.plugin.zsh#L322"
+		# 定义了 alias g
+		echo "todo now overwrite them as own need"
+		;;
 	j)
 		cd $this_dir
 		;;
@@ -248,4 +248,112 @@ function gbo() {
 	url=$(git-repo-url "$1") && open "$url"
 	# 太慢，每次都要请求github api，尽量从本地读取！！！
 	# GH_DEBUG=api gh browse -n
+}
+
+# Git Branch Helper
+function git-branch() {
+	local act=${1:-list}
+
+	(($# > 0)) && shift
+
+	case "$act" in
+	new)
+		[ -z "$1" ] && {
+			echo "❌ 请提供新分支名称"
+			return 1
+		}
+		git checkout -b "$1" "${@:2}"
+		;;
+
+	l | ls | list)
+		git branch -l --sort=-committerdate --format="%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(color:red)%(objectname:short)%(color:reset) (%(color:green)%(committerdate:relative)%(color:reset)) %(contents:subject)"
+		;;
+	lr | ls.remote)
+		git branch -r --sort=-committerdate --format="%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(color:red)%(objectname:short)%(color:reset) (%(color:green)%(committerdate:relative)%(color:reset)) %(contents:subject)"
+		;;
+
+	rn | rename)
+		[ -z "$1" ] && {
+			echo "❌ 请提供分支新名称"
+			return 1
+		}
+		[ -n "$2" ] && git branch -m "$1" "$2" || git branch -m "$1"
+		;;
+
+	del | rm)
+		[ -z "$1" ] && {
+			echo "❌ 请提供要删除的分支名称"
+			return 1
+		}
+		if [ "$1" = "-f" ] || [ "$1" = "--force" ]; then
+			git branch -D "$2"
+		else
+			git branch -d "$1"
+		fi
+		;;
+
+	del.r | del.remote)
+		# 删除远程分支: git-branch del.r <remote-branch>
+		[ -z "$1" ] && {
+			echo "❌ 请提供要删除的远程分支名称"
+			return 1
+		}
+		git push origin --delete "$1"
+		;;
+
+	co)
+		# 切换分支（不加参数默认切回上一个分支 - ）
+		git checkout "${1:--}"
+		;;
+
+	# ps | push)
+	# 	# 将当前分支推送到远程（如果是第一次推送，自动加上 -u 设置上游追踪）
+	# 	local current_branch=$(git rev-parse --abbrev-ref HEAD)
+	# 	git push -u origin "$current_branch"
+	# 	;;
+
+	m | merge)
+		# 合并指定分支到当前分支: git-branch m <target-branch>
+		[ -z "$1" ] && {
+			echo "❌ 请提供要合并的目标分支名称"
+			return 1
+		}
+		git merge "$1"
+		;;
+
+	rb | rebase)
+		# 变基: git-branch rb <target-branch>
+		[ -z "$1" ] && {
+			echo "❌ 请提供变基的目标分支名称"
+			return 1
+		}
+		git rebase "$1"
+		;;
+
+	clean)
+		# 清理本地那些“在远程已被删除”的无效跟踪分支
+		git fetch --prune
+		echo "🧹 已同步远程分支状态，并清理过期指针"
+		;;
+
+	h | help | -h | --help)
+		echo "用法: git-branch <command> [args]"
+		echo ""
+		echo "CRUD 基础:"
+		echo "  new <name> [start]             创建并切换分支"
+		echo "  l, ls, list                    查看本地/远程分支列表"
+		echo "  rename [old] <new>             重命名分支"
+		echo "  del, rm [-f] <name>            删除本地分支 (-f 强制删除)"
+		echo ""
+		echo "常用扩展指令:"
+		echo "  co [name]                      切换分支 (默认切回上一次分支 '-')"
+		echo "  ps, push                       推送当前分支到 origin 并建立关联"
+		echo "  del.r, del.remote <name>       删除远程分支"
+		echo "  m, merge <name>                合并分支到当前分支"
+		echo "  rb, rebase <name>              对指定分支做 rebase 变基"
+		echo "  clean                          清理已删除远程分支对应的本地追踪"
+		;;
+	*)
+		;;
+	esac
 }

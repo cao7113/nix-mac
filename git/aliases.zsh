@@ -1,6 +1,4 @@
-alias og="gbo"
-alias gtag="git-tag"
-
+alias gco='git checkout'
 alias ga='git add'
 alias gst='git status'
 alias gcl="git clone"
@@ -33,5 +31,8 @@ alias gdif2="git diff HEAD~1"
 
 ## expand tools
 
+alias gb=git-branch
 alias gurl="git-repo-url"
 alias glog="git-log"
+alias gtag="git-tag"
+alias og="gbo"

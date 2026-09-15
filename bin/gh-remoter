@@ -1,0 +1,174 @@
+#!/usr/bin/env zsh
+
+# 在脚本入口最外层立即锁定脚本名称（此时 $0 还未被函数覆盖）
+readonly SCRIPT_NAME="${0:t}"
+
+# ------------------------------------------------------------------------------
+# 帮助信息定义
+# ------------------------------------------------------------------------------
+show_help() {
+	local cmd_name="$SCRIPT_NAME"
+
+	# 防护：如果因特殊方式加载导致拿到的还是 zsh/main，则保底为 gh-remoter
+	if [[ "$cmd_name" == "zsh" || "$cmd_name" == "main" || "$cmd_name" == "show_help" ]]; then
+		cmd_name="gh-remoter"
+	fi
+
+	cat <<EOF
+用法: ${cmd_name} [选项] <ssh|https>
+
+快速切换当前 Git 仓库远程地址的协议格式 (SSH <-> HTTPS)。
+
+参数:
+  ssh                   将 remote URL 切换为 SSH 格式 (git@github.com:owner/repo.git)
+  https                 将 remote URL 切换为 HTTPS 格式 (https://github.com/owner/repo.git)
+
+选项:
+  -r, --remote <NAME>   指定要修改的远程仓库名称 (默认: origin)
+  -h, --help            显示此帮助信息并退出
+
+示例:
+  ${cmd_name} ssh
+  ${cmd_name} -r upstream https
+  ${cmd_name} --remote my-fork ssh
+EOF
+}
+
+# ------------------------------------------------------------------------------
+# 显示当前仓库的所有 Remote 状态
+# ------------------------------------------------------------------------------
+show_current_remotes() {
+	echo "📌 当前 Remote 如下："
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		local remotes
+		remotes=$(git remote -v 2>/dev/null)
+		if [[ -n "$remotes" ]]; then
+			echo "$remotes" | sed 's/^/   /'
+		else
+			echo "   (无远程仓库配置)"
+		fi
+	else
+		echo "   ⚠️ 当前目录不是 Git 仓库"
+	fi
+	echo ""
+}
+
+# ------------------------------------------------------------------------------
+# 核心业务逻辑函数
+# ------------------------------------------------------------------------------
+gh_set_remote() {
+	local target_format="$1"
+	local remote_name="$2"
+
+	# 1. 检查是否在 Git 工作区
+	if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		echo "❌ 错误: 当前工作目录不是一个 Git 仓库" >&2
+		return 1
+	fi
+
+	# 2. 获取当前的 remote 地址
+	local current_url
+	current_url=$(git remote get-url "$remote_name" 2>/dev/null)
+	if [[ -z "$current_url" ]]; then
+		echo "❌ 错误: 当前仓库没有配置名为 '$remote_name' 的远程地址" >&2
+		return 1
+	fi
+
+	# 3. 解析 GitHub 地址中的 用户名 和 仓库名
+	local owner repo
+	if [[ "$current_url" =~ 'github\.com[:/]([^/]+)/(.+)' ]]; then
+		owner="$match[1]"
+		repo="$match[2]"
+
+		# 确保仓库名带有 .git 后缀
+		if [[ "$repo" != *.git ]]; then
+			repo="${repo}.git"
+		fi
+	else
+		echo "❌ 错误: 当前 remote '$remote_name' 的 URL ($current_url) 不属于 GitHub 仓库，无法转换" >&2
+		return 1
+	fi
+
+	# 4. 根据目标格式构建新的 URL
+	local new_url
+	if [[ "$target_format" == "ssh" ]]; then
+		new_url="git@github.com:${owner}/${repo}"
+	else
+		new_url="https://github.com/${owner}/${repo}"
+	fi
+
+	# 5. 判断新旧地址是否一致，避免无意义的操作
+	if [[ "$current_url" == "$new_url" ]]; then
+		echo "ℹ️ 当前 remote '$remote_name' 已经是 $target_format 格式，无需修改。"
+		return 0
+	fi
+
+	# 6. 执行转换
+	echo "🔄 正在切换 remote '$remote_name' 的协议格式..."
+	echo "   - 旧地址: $current_url"
+	echo "   - 新地址: $new_url"
+
+	git remote set-url "$remote_name" "$new_url"
+	echo "✅ 转换成功！"
+}
+
+# ------------------------------------------------------------------------------
+# 入口主函数 (Main)
+# ------------------------------------------------------------------------------
+main() {
+	# 无参数输入时，显示当前 remotes 并展示帮助文档
+	if [[ $# -eq 0 ]]; then
+		show_current_remotes
+		show_help
+		return 0
+	fi
+
+	local remote_name="origin"
+	local target_format=""
+
+	# 手动解析命令行选项与位置参数
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		-h | --help)
+			show_help
+			return 0
+			;;
+		-r | --remote)
+			if [[ -n "${2:-}" && "${2:-}" != -* ]]; then
+				remote_name="$2"
+				shift 2
+			else
+				echo "❌ 错误: '$1' 选项需要指定一个远程名称 (例如: -r upstream)" >&2
+				return 1
+			fi
+			;;
+		ssh | https)
+			target_format="$1"
+			shift
+			;;
+		*)
+			echo "❌ 错误: 未知参数 '$1'" >&2
+			echo "" >&2
+			show_help >&2
+			return 1
+			;;
+		esac
+	done
+
+	# 校验是否传入了必需的目标格式
+	if [[ -z "$target_format" ]]; then
+		echo "❌ 错误: 缺少目标格式参数 ('ssh' 或 'https')" >&2
+		echo "" >&2
+		show_help >&2
+		return 1
+	fi
+
+	gh_set_remote "$target_format" "$remote_name"
+}
+
+# ------------------------------------------------------------------------------
+# 脚本执行防护 guard
+# ------------------------------------------------------------------------------
+if [[ "${(%):-%N}" == "$0" ]]; then
+	main "$@"
+fi

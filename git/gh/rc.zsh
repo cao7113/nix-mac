@@ -1,10 +1,44 @@
 # gh helpers
+alias ghcmd="command gh"
+alias gist="gh gist"
 
-# gh tags
-# gh api repos/cao7113/gater/tags --jq '.[].name'
-# gh release list
-# gh release view v0.1.0
-# GitHub 会根据上一个 Tag 到当前 Tag 之间的 PR 自动生成变更日志
-# gh release create v1.0.0 --generate-notes
-# 仅删除 GitHub 上的 Release 包装，远程 Git Tag 依然保留
-# gh release delete v1.0.0
+function gh() {
+	local act=$1
+	(($# > 0)) && shift
+
+	local this_rc="${(%):-%x}"
+	local this_dir=${this_rc:A:h}
+
+	case "$act" in
+	ai)
+		ghcmd copilot
+		;;
+	cl | clone)
+		# 好处：会带着上游upstream信息
+		ghcmd repo clone "$@"
+		;;
+	remote)
+		gh-remoter "$@"
+		;;
+	user)
+		gh-user "$@"
+		;;
+	verify)
+		ssh -T github.com
+		;;
+	vis)
+		# public or private visibility
+		ghcmd repo view --json visibility --jq .visibility
+		;;
+	j)
+		cd $this_dir
+		;;
+	vi)
+		vi $this_rc
+		;;
+	*)
+		# 其他 gh 子命令正常调用
+		ghcmd $act "$@"
+		;;
+	esac
+}

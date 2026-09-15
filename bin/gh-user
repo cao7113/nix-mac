@@ -1,0 +1,134 @@
+#!/usr/bin/env zsh
+
+# 在脚本最外层统一定义全局/常量（锁定名称与缓存路径）
+readonly SCRIPT_NAME="${0:t}"
+readonly GH_USER_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
+readonly GH_USER_CACHE_FILE="$GH_USER_CACHE_DIR/gh-user"
+
+# ------------------------------------------------------------------------------
+# 帮助信息定义
+# ------------------------------------------------------------------------------
+show_help() {
+	local cmd_name="$SCRIPT_NAME"
+	if [[ "$cmd_name" == "zsh" || "$cmd_name" == "main" || "$cmd_name" == "show_help" ]]; then
+		cmd_name="gh-user"
+	fi
+
+	cat <<EOF
+用法: ${cmd_name} [选项]
+
+获取当前 GitHub 用户名。默认优先级：
+  1. 环境变量 GH_USER
+  2. 本地缓存文件 (\$XDG_CACHE_HOME/gh-user 或 ~/.cache/gh-user)
+  3. GitHub CLI 工具 (gh api user)
+
+选项:
+  -f, --force-refresh  强制刷新，跳过缓存重新从 API 获取并更新本地缓存
+  -c, --clear-cache    清除本地用户名缓存
+  -h, --help           显示此帮助信息并退出
+
+示例:
+  ${cmd_name}
+  ${cmd_name} -f
+  ${cmd_name} --clear-cache
+EOF
+}
+
+# ------------------------------------------------------------------------------
+# 核心业务逻辑函数
+# ------------------------------------------------------------------------------
+get_gh_user() {
+	local force_refresh="${1:-false}"
+	local username=""
+
+	# 1. 检查环境变量 GH_USER（不受 --force-refresh 影响）
+	if [[ -n "$GH_USER" ]]; then
+		echo "$GH_USER"
+		return 0
+	fi
+
+	# 2. 检查本地文件缓存（未开启强制刷新时使用）
+	if [[ "$force_refresh" == "false" && -f "$GH_USER_CACHE_FILE" ]]; then
+		username=$(cat "$GH_USER_CACHE_FILE" 2>/dev/null)
+		if [[ -n "$username" ]]; then
+			echo "$username"
+			return 0
+		fi
+	fi
+
+	# 3. 通过 GitHub CLI API 获取最新数据
+	if ! command -v gh &>/dev/null; then
+		echo "❌ 错误: 未找到 gh 命令，请先安装 GitHub CLI" >&2
+		return 1
+	fi
+
+	# 调用 API 获取用户名
+	username=$(command gh api user --jq '.login' 2>/dev/null)
+
+	if [[ -n "$username" ]]; then
+		# 创建缓存目录并更新缓存文件
+		mkdir -p "$GH_USER_CACHE_DIR"
+		echo "$username" >"$GH_USER_CACHE_FILE"
+
+		echo "$username"
+		return 0
+	else
+		echo "❌ 错误: 无法获取 GitHub 用户名，请检查登录状态 (gh auth status)" >&2
+		return 1
+	fi
+}
+
+clear_cache() {
+	if [[ -f "$GH_USER_CACHE_FILE" ]]; then
+		rm -f "$GH_USER_CACHE_FILE"
+		echo "✅ 已清除缓存文件: $GH_USER_CACHE_FILE"
+	else
+		echo "ℹ️ 缓存文件不存在，无需清理"
+	fi
+}
+
+# ------------------------------------------------------------------------------
+# 入口主函数 (Main)
+# ------------------------------------------------------------------------------
+main() {
+	# 1. 无参数：直接获取
+	if [[ $# -eq 0 ]]; then
+		get_gh_user "false"
+		return $?
+	fi
+
+	local force_refresh="false"
+
+	# 2. 解析选项
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		-h | --help)
+			show_help
+			return 0
+			;;
+		-c | --clear-cache)
+			clear_cache
+			return 0
+			;;
+		-f | --force-refresh)
+			force_refresh="true"
+			shift
+			;;
+		*)
+			echo "❌ 错误: 未知参数 '$1'" >&2
+			echo "" >&2
+			show_help >&2
+			return 1
+			;;
+		esac
+	done
+
+	get_gh_user "$force_refresh"
+}
+
+# ------------------------------------------------------------------------------
+# 脚本执行防护 guard
+# ------------------------------------------------------------------------------
+if [[ "${(%):-%N}" == "$0" ]]; then
+	main "$@"
+fi
