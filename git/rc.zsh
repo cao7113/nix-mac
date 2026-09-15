@@ -1,8 +1,4 @@
 # Git helpers
-
-# https://github.com/ohmyzsh/ohmyzsh/blob/master/plugins/git/git.plugin.zsh#L322
-# "ohmyzsh/ohmyzsh path:plugins/git" # 引入 OMZ 的 git 插件（提供 gst, gco 等大量别名）
-
 alias g=git-wrapper
 
 function git-wrapper() {
@@ -17,8 +13,14 @@ function git-wrapper() {
 		cd "$(ops home)/test-git"
 		;;
 	j.cog)
-		cd $this_dir/cog
+		cog-wrapper j
 		;;
+  omz)
+    # "ohmyzsh/ohmyzsh path:plugins/git" # 引入 OMZ 的 git 插件（提供 gco 等大量别名）
+    open "https://github.com/ohmyzsh/ohmyzsh/blob/master/plugins/git/git.plugin.zsh#L322"
+    # 定义了 alias g
+    echo "todo now overwrite them as own need"
+    ;;
 	j)
 		cd $this_dir
 		;;
@@ -31,11 +33,10 @@ function git-wrapper() {
 	esac
 }
 
+source "$(git-wrapper home)/aliases.zsh"
 source "$(git-wrapper home)/gh/rc.zsh"
 source "$(git-wrapper home)/cog/rc.zsh"
-
-alias og="gbo"
-alias gtag="git-tag"
+source "$(git-wrapper home)/repo/rc.zsh"
 
 function git_current_branch() {
 	git rev-parse --abbrev-ref HEAD 2>/dev/null
@@ -183,40 +184,10 @@ function unstaged() {
 	git restore --staged .
 }
 
-alias gurl="git-repo-url"
-
-alias glog="git-log"
-alias gcl="git clone"
-alias gcld='git clone --depth 5'
-alias gclr="git clone --recurse-submodules"
-
-# git命令存储路径
-alias gpath="git --exec-path"
-alias gbra='gbr -a'
-alias gbrd='gbr -d'
-# 列出远端仓库
-alias grv="git remote -v"
-# 在当前ａ分支查看ｂ分支下的文件ｃ: git show b:path/to/c
-alias gshow='git show'
-alias gcat="git cat-file -p"
-alias gstash="git stash"
-# git show-ref #查看各branch的commit id
-
-# https://askubuntu.com/questions/336907/really-verbose-way-to-test-git-connection-over-ssh
-#alias gpull='GIT_SSH_COMMAND="ssh -vvv" git pull'
-alias gpl='GIT_SSH_COMMAND="ssh -v" git pull'
-alias gpltags='git pull --tags'
-alias gps='GIT_SSH_COMMAND="ssh -v" git push'
-alias greset='git reset'
-alias ghreset='git add . && git reset --hard HEAD'
-
 # 清理远端已经不存在的本地陈旧tag
-gclean_stale_tags() {
+function gclean_stale_tags() {
 	git tag -l | xargs git tag -d && git fetch -t
 }
-alias gdif="git diff"
-alias gdifc="gdif --cached"
-alias gdif2="git diff HEAD~1"
 
 # 查看引用(eg. master)的commitid
 function git-commit-id() {

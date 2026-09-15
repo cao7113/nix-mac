@@ -4,6 +4,7 @@ sbox = "github:sagernet/sing-box"
 gater = "github:cao7113/gater"
 gater-client = "github:cao7113/gater"
 kc-util = "github:cao7113/kc-util"
+repo = "github:cao7113/repo-manager"
 
 [tools]
 usage = "latest"
@@ -15,6 +16,7 @@ gater = "latest"
 mkcert = "latest"
 swift = "latest"
 kc-util = "latest"
+repo = "latest"
 
 [tools.sbox]
 version = "1.14.0-beta.14"

@@ -9,16 +9,26 @@ function cog-wrapper() {
 
 	# cog bump --dry-run --auto
 	# cog -v get-version --fallback 0.1.0 --tag
+	local ref_conf=$this_dir/config.toml
 
 	case "$act" in
+	demo)
+		cd $this_dir/_local/demo
+		;;
 	repo)
 		open https://github.com/cocogitto/cocogitto
 		;;
 	ci)
 		cog commit "$@"
 		;;
+	conf)
+		cat $ref_conf
+		;;
 	g)
-		cog --config $this_dir/config.toml "$@"
+		cog --config $ref_conf "$@"
+		;;
+	j)
+		cd $this_dir
 		;;
 	*)
 		cog $act "$@"

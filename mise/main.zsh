@@ -45,7 +45,8 @@ function mise-wrapper() {
 		# follow direnv rules
 		mise trust "$@"
 		;;
-	up)
+	up2)
+		# upgrade already alias as up
 		mise upgrade --prune "$@" # -b --bump --local --prune
 		;;
 	up.self)
