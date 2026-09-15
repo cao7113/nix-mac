@@ -1,0 +1,176 @@
+#!/usr/bin/env zsh
+
+# 在脚本入口最外层锁定脚本名称
+readonly SCRIPT_NAME="${0:t}"
+
+# ------------------------------------------------------------------------------
+# 帮助信息定义
+# ------------------------------------------------------------------------------
+show_help() {
+	local cmd_name="$SCRIPT_NAME"
+	if [[ "$cmd_name" == "zsh" || "$cmd_name" == "main" || "$cmd_name" == "show_help" ]]; then
+		cmd_name="git-remote"
+	fi
+
+	cat <<EOF
+用法: ${cmd_name} <subcommand> [options] [args]
+
+Git 远程仓库 (Remote) 辅助管理工具。
+
+指令列表:
+  l, ls, list                    查看所有远程仓库详细列表 (-v)
+  a, add <name> <url>            添加新的远程仓库
+  rm, del, remove <name>        删除指定的远程仓库
+  mv, rename <old> <new>         重命名远程仓库
+  set-url <name> <new_url>       修改远程仓库的 URL 地址
+  url [name]                     解析并输出指定远程仓库的 HTTP(S) 网页 URL (默认: origin)
+  web, open [name]               在默认浏览器中打开远程仓库网页 (默认: origin)
+  prune [name]                   清理指定远程仓库已失效的本地追踪分支 (默认: origin)
+
+通用选项:
+  -h, --help, help               显示此帮助信息并退出
+
+示例:
+  ${cmd_name} ls
+  ${cmd_name} add upstream git@github.com:user/repo.git
+  ${cmd_name} web upstream
+EOF
+}
+
+# ------------------------------------------------------------------------------
+# 内部辅助函数： Git URL 转 HTTP 网页链接
+# GH_DEBUG=api gh browse -n
+# ------------------------------------------------------------------------------
+_parse_repo_url() {
+	local target="${1:-origin}"
+	local input_url=""
+
+	input_url=$(git config --get "remote.${target}.url" 2>/dev/null)
+
+	if [[ -z "$input_url" ]]; then
+		if [[ "$target" == *":"* || "$target" == "http"* ]]; then
+			input_url="$target"
+		else
+			echo "❌ 错误: 未找到名为 '${target}' 的远程仓库配置" >&2
+			return 1
+		fi
+	fi
+
+	local http_url="$input_url"
+
+	# 正则转换 ssh/git 协议为 https
+	if [[ "$http_url" =~ ^ssh://git@([^/]+)/(.*)$ ]]; then
+		http_url="https://${match[1]}/${match[2]}"
+	elif [[ "$http_url" =~ ^git@([^:]+):(.*)$ ]]; then
+		http_url="https://${match[1]}/${match[2]}"
+	fi
+
+	echo "${http_url%\.git}"
+}
+
+# ------------------------------------------------------------------------------
+# 核心业务逻辑
+# ------------------------------------------------------------------------------
+handle_remote() {
+	local act="${1:-ls}"
+	(($# > 0)) && shift
+
+	case "$act" in
+	l | ls | list)
+		git remote -v
+		;;
+
+	a | add)
+		if [[ $# -lt 2 ]]; then
+			echo "❌ 错误: 请提供远程名称和 URL (例如: ${SCRIPT_NAME} add upstream <url>)" >&2
+			return 1
+		fi
+		git remote add "$1" "$2"
+		echo "✅ 已成功添加远程仓库: $1 -> $2"
+		;;
+
+	rm | del | remove)
+		if [[ -z "$1" ]]; then
+			echo "❌ 错误: 请提供要删除的远程仓库名称" >&2
+			return 1
+		fi
+		git remote remove "$1"
+		echo "🗑️ 已删除远程仓库: $1"
+		;;
+
+	mv | rename)
+		if [[ $# -lt 2 ]]; then
+			echo "❌ 错误: 请提供旧名称和新名称 (例如: ${SCRIPT_NAME} rename origin old-origin)" >&2
+			return 1
+		fi
+		git remote rename "$1" "$2"
+		echo "✅ 远程仓库已重命名: $1 -> $2"
+		;;
+
+	set-url)
+		if [[ $# -lt 2 ]]; then
+			echo "❌ 错误: 请提供远程名称和新 URL" >&2
+			return 1
+		fi
+		git remote set-url "$1" "$2"
+		echo "✅ 已更新远程仓库 '$1' 的 URL 为: $2"
+		;;
+
+	url)
+		_parse_repo_url "${1:-origin}"
+		;;
+
+	web | open)
+		local target_url
+		target_url=$(_parse_repo_url "${1:-origin}") || return 1
+
+		echo "🌐 正在打开网页: $target_url"
+		if command -v open &>/dev/null; then
+			open "$target_url" # macOS
+		elif command -v xdg-open &>/dev/null; then
+			xdg-open "$target_url" # Linux
+		else
+			echo "❌ 错误: 无法找到适合打开浏览器的系统命令 (open/xdg-open)" >&2
+			return 1
+		fi
+		;;
+
+	prune)
+		local remote="${1:-origin}"
+		echo "🧹 正在清理远程仓库 '$remote' 的失效分支指针..."
+		git remote prune "$remote"
+		;;
+
+	-h | --help | h | help)
+		show_help
+		;;
+
+	*)
+		git remote $act "$@"
+		;;
+	esac
+}
+
+# ------------------------------------------------------------------------------
+# 入口主函数 (Main)
+# ------------------------------------------------------------------------------
+main() {
+	# 优先验证 Git 环境
+	if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		if [[ "${1:-}" == "-h" || "${1:-}" == "--help" || "${1:-}" == "help" ]]; then
+			show_help
+			return 0
+		fi
+		echo "❌ 错误: 当前目录不是一个 Git 仓库" >&2
+		return 1
+	fi
+
+	handle_remote "$@"
+}
+
+# ------------------------------------------------------------------------------
+# 脚本执行防护 guard
+# ------------------------------------------------------------------------------
+if [[ "${(%):-%N}" == "$0" ]]; then
+	main "$@"
+fi

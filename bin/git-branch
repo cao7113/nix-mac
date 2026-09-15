@@ -1,0 +1,181 @@
+#!/usr/bin/env zsh
+
+# 在脚本入口最外层锁定脚本名称
+readonly SCRIPT_NAME="${0:t}"
+
+# ------------------------------------------------------------------------------
+# 帮助信息定义
+# ------------------------------------------------------------------------------
+show_help() {
+	local cmd_name="$SCRIPT_NAME"
+	if [[ "$cmd_name" == "zsh" || "$cmd_name" == "main" || "$cmd_name" == "show_help" ]]; then
+		cmd_name="git-branch"
+	fi
+
+	cat <<EOF
+用法: ${cmd_name} <subcommand> [options] [args]
+
+Git 分支辅助管理工具。
+
+CRUD 基础指令:
+  new <name> [start]             创建并切换分支
+  l, ls, list                    按提交时间倒序查看本地分支列表
+  lr, ls.remote                  按提交时间倒序查看远程分支列表
+  rename [old] <new>             重命名分支
+  del, rm [-f] <name>            删除本地分支 (-f 强制删除)
+
+常用扩展指令:
+  co [name]                      切换分支 (默认切回上一次分支 '-')
+  ps, push                       推送当前分支到 origin 并建立关联
+  del.r, del.remote <name>       删除远程分支
+  m, merge <name>                合并分支到当前分支
+  rb, rebase <name>              对指定分支做 rebase 变基
+  clean                          清理已删除远程分支对应的本地追踪
+
+通用选项:
+  -h, --help, help               显示此帮助信息并退出
+
+示例:
+  ${cmd_name} new feature/login
+  ${cmd_name} del -f feature/old
+  ${cmd_name} co
+EOF
+}
+
+# ------------------------------------------------------------------------------
+# 核心业务逻辑实现
+# ------------------------------------------------------------------------------
+handle_branch() {
+	local act="${1:-list}"
+	(($# > 0)) && shift
+
+	case "$act" in
+	new)
+		if [[ -z "$1" ]]; then
+			echo "❌ 错误: 请提供新分支名称" >&2
+			return 1
+		fi
+		git checkout -b "$1" "${@:2}"
+		;;
+
+	l | ls | list)
+		git branch -l --sort=-committerdate --format="%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(color:red)%(objectname:short)%(color:reset) (%(color:green)%(committerdate:relative)%(color:reset)) %(contents:subject)"
+		;;
+
+	lr | ls.remote)
+		git branch -r --sort=-committerdate --format="%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(color:red)%(objectname:short)%(color:reset) (%(color:green)%(committerdate:relative)%(color:reset)) %(contents:subject)"
+		;;
+
+	rename)
+		if [[ -z "$1" ]]; then
+			echo "❌ 错误: 请提供分支新名称" >&2
+			return 1
+		fi
+		if [[ -n "$2" ]]; then
+			git branch -m "$1" "$2"
+		else
+			git branch -m "$1"
+		fi
+		;;
+
+	del | rm)
+		if [[ -z "$1" ]]; then
+			echo "❌ 错误: 请提供要删除的分支名称" >&2
+			return 1
+		fi
+		if [[ "$1" == "-f" || "$1" == "--force" ]]; then
+			if [[ -z "$2" ]]; then
+				echo "❌ 错误: 请提供强删的目标分支名称" >&2
+				return 1
+			fi
+			echo "🔥 正在强制删除本地分支: $2"
+			git branch -D "$2"
+		else
+			echo "🗑️ 正在删除本地分支: $1"
+			git branch -d "$1"
+		fi
+		;;
+
+	del.r | del.remote)
+		if [[ -z "$1" ]]; then
+			echo "❌ 错误: 请提供要删除的远程分支名称" >&2
+			return 1
+		fi
+		echo "🗑️ 正在删除远程分支: $1"
+		git push origin --delete "$1"
+		;;
+
+	co)
+		git checkout "${1:--}"
+		;;
+
+	ps | push)
+		local current_branch
+		current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+		if [[ -z "$current_branch" ]]; then
+			echo "❌ 错误: 当前不在 Git 仓库内或处于 HEAD detached 状态" >&2
+			return 1
+		fi
+		echo "🚀 正在推送当前分支 ($current_branch) 并设置上游追踪..."
+		git push -u origin "$current_branch"
+		;;
+
+	m | merge)
+		if [[ -z "$1" ]]; then
+			echo "❌ 错误: 请提供要合并的目标分支名称" >&2
+			return 1
+		fi
+		git merge "$1"
+		;;
+
+	rb | rebase)
+		if [[ -z "$1" ]]; then
+			echo "❌ 错误: 请提供变基的目标分支名称" >&2
+			return 1
+		fi
+		git rebase "$1"
+		;;
+
+	clean)
+		echo "🧹 正在同步远程分支状态并清理过期指针..."
+		git fetch --prune
+		echo "✅ 清理完成！"
+		;;
+
+	h | help | -h | --help)
+		show_help
+		;;
+
+	*)
+		echo "❌ 错误: 未知指令 '$act'" >&2
+		echo "" >&2
+		show_help >&2
+		return 1
+		;;
+	esac
+}
+
+# ------------------------------------------------------------------------------
+# 入口主函数 (Main)
+# ------------------------------------------------------------------------------
+main() {
+	# 优先验证 Git 环境
+	if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		# 如果只是查看 help，允许在 Git 目录外运行
+		if [[ "${1:-}" == "-h" || "${1:-}" == "--help" || "${1:-}" == "help" ]]; then
+			show_help
+			return 0
+		fi
+		echo "❌ 错误: 当前目录不是一个 Git 仓库" >&2
+		return 1
+	fi
+
+	handle_branch "$@"
+}
+
+# ------------------------------------------------------------------------------
+# 脚本执行防护 guard
+# ------------------------------------------------------------------------------
+if [[ "${(%):-%N}" == "$0" ]]; then
+	main "$@"
+fi

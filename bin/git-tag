@@ -1,0 +1,192 @@
+#!/usr/bin/env zsh
+# Git Tag（标签）本质上是**指向某个特定 Commit 的只读指针（或不可变快照）**。它通常用来标记版本发布点（如 `v1.0.0`）。
+
+# 在脚本入口最外层锁定脚本名称
+readonly SCRIPT_NAME="${0:t}"
+
+# ------------------------------------------------------------------------------
+# 帮助信息定义
+# ------------------------------------------------------------------------------
+show_help() {
+	local cmd_name="$SCRIPT_NAME"
+	if [[ "$cmd_name" == "zsh" || "$cmd_name" == "main" || "$cmd_name" == "show_help" ]]; then
+		cmd_name="git-tag"
+	fi
+
+	cat <<EOF
+用法: ${cmd_name} <subcommand> [options] [args]
+
+Git 标签（Tag）辅助管理工具。
+Git Tag（标签）本质上是**指向某个特定 Commit 的只读指针（或不可变快照）**。它通常用来标记版本发布点（如 $(v1.0.0)）。
+
+本地 Tag 指令:
+  l, ls, list                    查看所有本地标签
+  mk, create <tag> [commit]      创建轻量标签 (Lightweight)
+  a <tag> [-m "msg"]             创建附注标签 (Annotated)
+  del, rm <tag...>               删除本地标签
+  show <tag>                     查看标签详细信息/提交内容
+
+远程 Tag 指令:
+  r, remote <subcommand>         操作远程标签 (查看/推送/拉取/删除)
+    l, ls [remote]               查看远程仓库标签列表 (默认 remote: origin)
+    ps, push <tag> [remote]      推送单个标签到远程
+    psa, push.all [remote]       推送所有本地标签到远程
+    pl, pull [remote]            从远程拉取所有标签
+    pull.tag <tag> [remote]      从远程单独拉取指定标签
+    rm, del <tag> [remote]       删除远程分支上的指定标签
+
+通用选项:
+  -h, --help, help               显示此帮助信息并退出
+
+示例:
+  ${cmd_name} a v1.0.0 -m "Release v1.0.0"
+  ${cmd_name} r ps v1.0.0
+  ${cmd_name} r rm v1.0.0
+EOF
+}
+
+# ------------------------------------------------------------------------------
+# 远程 Tag 操作逻辑
+# ------------------------------------------------------------------------------
+handle_tag_remote() {
+	local act="${1:-ls}"
+	(($# > 0)) && shift
+
+	case "$act" in
+	l | ls)
+		local remote="${1:-origin}"
+		git ls-remote --tags "$remote"
+		;;
+	rm | del)
+		if [[ -z "$1" ]]; then
+			echo "❌ 错误: 请提供要删除的远程标签名称" >&2
+			return 1
+		fi
+		local tag="$1"
+		local remote="${2:-origin}"
+		echo "🗑️ 正在删除远程标签: $tag ($remote)..."
+		git push "$remote" --delete "$tag"
+		;;
+	ps | push)
+		if [[ -z "$1" ]]; then
+			echo "❌ 错误: 请提供要推送的标签名称" >&2
+			return 1
+		fi
+		local tag="$1"
+		local remote="${2:-origin}"
+		echo "🚀 正在推送标签 $tag 到远程 $remote..."
+		git push "$remote" "$tag"
+		;;
+	psa | push.all)
+		local remote="${1:-origin}"
+		echo "🚀 正在推送所有本地标签到远程 $remote..."
+		git push "$remote" --tags
+		;;
+	pl | pull)
+		local remote="${1:-origin}"
+		echo "📥 正在拉取远程 $remote 的所有标签..."
+		git fetch "$remote" --tags
+		;;
+	pull.tag)
+		if [[ -z "$1" ]]; then
+			echo "❌ 错误: 请提供要拉取的标签名称" >&2
+			return 1
+		fi
+		local tag="$1"
+		local remote="${2:-origin}"
+		echo "📥 正在从 $remote 单独拉取标签: $tag..."
+		git fetch "$remote" "refs/tags/$tag:refs/tags/$tag"
+		;;
+	-h | --help | help)
+		show_help
+		;;
+	*)
+		echo "❌ 错误: 未知远程指令 'r $act'" >&2
+		echo "" >&2
+		show_help >&2
+		return 1
+		;;
+	esac
+}
+
+# ------------------------------------------------------------------------------
+# 本地 Tag 操作逻辑
+# ------------------------------------------------------------------------------
+handle_tag() {
+	local act="${1:-list}"
+	(($# > 0)) && shift
+
+	case "$act" in
+	l | ls | list)
+		git tag "$@"
+		;;
+	del | rm)
+		if [[ $# -eq 0 ]]; then
+			echo "❌ 错误: 请提供要删除的标签名称" >&2
+			return 1
+		fi
+		git tag -d "$@"
+		;;
+	bump)
+		echo "ℹ️ todo: 本地根据 Conventional Commits 规则自动 bump 版本号并打 Tag"
+		;;
+	mk | create)
+		if [[ $# -eq 0 ]]; then
+			echo "❌ 错误: 请提供要创建的标签名称" >&2
+			return 1
+		fi
+		git tag "$@"
+		;;
+	a)
+		if [[ $# -eq 0 ]]; then
+			echo "❌ 错误: 请提供附注标签名称 (tag_name)" >&2
+			return 1
+		fi
+		local tag_name="$1"
+		shift
+		git tag -a "$tag_name" "$@"
+		;;
+	show)
+		if [[ $# -eq 0 ]]; then
+			echo "❌ 错误: 请提供要查看的标签名称" >&2
+			return 1
+		fi
+		git show "$@"
+		;;
+	r | remote)
+		handle_tag_remote "$@"
+		;;
+	-h | --help | help)
+		show_help
+		;;
+	*)
+		# 默认兜底：直接透传给原始 `git tag` 命令
+		git tag "$act" "$@"
+		;;
+	esac
+}
+
+# ------------------------------------------------------------------------------
+# 入口主函数 (Main)
+# ------------------------------------------------------------------------------
+main() {
+	# 优先验证 Git 环境
+	if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		if [[ "${1:-}" == "-h" || "${1:-}" == "--help" || "${1:-}" == "help" ]]; then
+			show_help
+			return 0
+		fi
+		echo "❌ 错误: 当前目录不是一个 Git 仓库" >&2
+		return 1
+	fi
+
+	# 无参数时默认执行查看列表
+	handle_tag "$@"
+}
+
+# ------------------------------------------------------------------------------
+# 脚本执行防护 guard
+# ------------------------------------------------------------------------------
+if [[ "${(%):-%N}" == "$0" ]]; then
+	main "$@"
+fi

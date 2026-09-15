@@ -22,8 +22,7 @@ alias gstash="git stash"
 alias gpl='GIT_SSH_COMMAND="ssh -v" git pull'
 alias gpltags='git pull --tags'
 alias gps='GIT_SSH_COMMAND="ssh -v" git push'
-alias greset='git reset'
-alias ghreset='git add . && git reset --hard HEAD'
+alias ghreset='git reset --hard HEAD'
 
 alias gdif="git diff"
 alias gdifc="gdif --cached"
@@ -32,7 +31,6 @@ alias gdif2="git diff HEAD~1"
 ## expand tools
 
 alias gb=git-branch
-alias gurl="git-repo-url"
 alias glog="git-log"
 alias gtag="git-tag"
 alias og="gbo"
