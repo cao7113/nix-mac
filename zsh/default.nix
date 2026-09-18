@@ -15,33 +15,6 @@
     autosuggestion.enable = true; # 开启命令自动建议（灰色文字提示）
     syntaxHighlighting.enable = true; # 命令行语法高亮
 
-    shellAliases = {
-      ns = "nh search";
-      # osup = "nh os switch"; # 对应 darwin-rebuild switch
-
-      e = "exit";
-      t = "task";
-
-      # 替代原生命令
-      # l = "eza -laah";
-      # ls = "eza --icons";
-      # ll = "eza -lh --icons --git";
-      # la = "eza -lah --icons --git";
-      # cd = "z"; # 让 cd 命令实际调用 zoxide
-      j = "z";
-      cat = "bat";
-
-      # Docker
-      dk = "docker";
-      dkc = "docker-compose";
-      dki = "docker images";
-      dka = "docker ps -a";
-
-      # 极客清理：按照你的要求判断并备份/删除旧的 .zshrc
-      # 使用了 Zsh 的 [[ -L ]] 判断软链接，[[ -f ]] 判断普通文件
-      nix-clean-zsh = "[[ -L ~/.zshrc ]] && rm ~/.zshrc || [[ -f ~/.zshrc ]] && mv ~/.zshrc ~/.zshrc.bak.$(date +%Y%m%d_%H%M%S)";
-    };
-
     # -------------------------------------------------------------------------
     # .zshrc 内容注入 (遵循最新 Home Manager API)
     # -------------------------------------------------------------------------
@@ -113,6 +86,11 @@
     #     file = "extra_configs.zsh"; # 该文件夹下要 source 的文件名
     #   }
     # ];
+
+    ## All aliases migrate to aliases.zsh
+    # shellAliases = {
+    #   ns = "nh search";
+    # };
   };
 
   # 既漂亮又极速的提示符

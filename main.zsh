@@ -134,3 +134,6 @@ source $nix_mac_home/tools/main.zsh
 # 		;;
 # 	esac
 # }
+
+# ns = "nh search";
+# # osup = "nh os switch"; # 对应 darwin-rebuild switch

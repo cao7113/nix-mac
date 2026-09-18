@@ -1,35 +1,62 @@
 #!/bin/zsh
-# Make a zsh-based bin command
-# Usage: mkbin <bin-script-name> [bin-path]
-
-# -e: 出错即退  -u: 变量未定义即退  -o pipefail: 管道错误即退
 set -euo pipefail
 
-if (($# < 1)); then
-	echo "Usage: $0 <bin-script-name> [bin-path]" >&2
-	exit 1
-fi
-script_name=$1
+usage() {
+	local script_exec="${(%):-%x}" # 获取当前脚本的文件名，避免被函数名替代
+	cat <<EOF
+Usage: ${script_exec:t} <path/to/bin>
 
-if (($# > 1)); then
-	bin_dir="$2"
-else
-	bin_dir="$(dirname "$0")"
-fi
-mkdir -p "$bin_dir"
+Create an executable Zsh script template at the specified path.
 
-script_path="$bin_dir/$script_name"
-if [[ -f "$script_path" ]]; then
-	echo "Already existed file: $script_path" >&2
-	exit 3
-fi
+Arguments:
+  <path/to/bin>        Path of the script to create (e.g. ~/bin/my-script or ./my-script)
+  -h, --help, h, help  Show this help message
+EOF
+}
 
-cat <<'EOF' >"$script_path"
-#!/bin/zsh
+main() {
+	if (($# < 1)); then
+		usage >&2
+		return 1
+	fi
+
+	case "$1" in
+	-h | --help | h | help)
+		usage
+		return 0
+		;;
+	esac
+
+	local target_path="$1"
+	local bin_dir="${target_path:h}"     # 提取路径的目录部分
+	local script_name="${target_path:t}" # 提取路径的文件名部分
+
+	if [[ -z "$script_name" ]]; then
+		echo "Error: Invalid script path '$target_path'" >&2
+		return 1
+	fi
+
+	# 如果仅传入文件名（如 my-script），$bin_dir 会为 "my-script"，修正为当前目录
+	if [[ "$bin_dir" == "$script_name" ]]; then
+		bin_dir="."
+	fi
+
+	if [[ -f "$target_path" ]]; then
+		echo "Already existed file: $target_path" >&2
+		return 3
+	fi
+
+	mkdir -p "$bin_dir"
+
+	cat <<'EOF' >"$target_path"
+#!/usr/bin/env zsh
 set -euo pipefail
 
 echo "# Hi $0"
 EOF
 
-chmod +x "$script_path"
-echo "✨ Successfully created script: $script_path"
+	chmod +x "$target_path"
+	echo "✨ Successfully created script: $target_path"
+}
+
+main "$@"

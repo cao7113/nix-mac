@@ -1,0 +1,560 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+## 技术背景：配合Gater管理 Phoenix 应用本地发布
+# 特别注意：
+# - 重构时不要清理原注释，完整保留！
+# - 尽量注释掉历史版本代码，并添加注释原因，便于之后跟踪回退！
+
+usage() {
+	local script_exec="${(%):-%x}"
+	cat <<EOF
+Usage: ${script_exec:t} [command] [options] [repo-path]
+
+Phoenix project build and deploy tool.
+
+Commands:
+  s, status, i, info     Show project release and link status
+  a, appname             Show the target application name from mix.exs
+  g, gen, tmpl           Generate application runtime configuration template
+  b, build [-f|--force]  Build the project release and generate .build_info
+  l, link                Create/Update symlink pointing to the release
+  r, rel, deploy [-f]    Build project release AND update symlink (build + link)
+  -h, --help, h, help    Show this help message
+
+Options:
+  -f, --force            Force rebuild even if current commit is already built
+
+Arguments:
+  [repo-path]            Path to the Phoenix project repository (default: Git repo root or current directory)
+EOF
+}
+
+# 比较版本号：若 $1 >= $2 返回 0，否则返回 1
+is_version_ge() {
+	local current_ver="$1"
+	local target_ver="$2"
+	autoload -U is-at-least
+	is-at-least "$target_ver" "$current_ver"
+}
+
+# 1. 检查脚本执行所需的关键命令依赖及 Elixir 版本 (>= 1.18.0)
+check_dependencies() {
+	local missing_cmds=()
+	local required_cmds=(git mix elixir tar)
+	local dep
+
+	for dep in "${required_cmds[@]}"; do
+		if ! command -v "$dep" >/dev/null 2>&1; then
+			missing_cmds+=("$dep")
+		fi
+	done
+
+	if [[ ${#missing_cmds[@]} -gt 0 ]]; then
+		echo "Error: Missing required commands: ${missing_cmds[*]}" >&2
+		echo "Please install them before running this script." >&2
+		return 1
+	fi
+
+	# 检查 Elixir 版本
+	local elixir_ver
+	elixir_ver=$(elixir -e "IO.puts(System.version())")
+
+	if [[ -z "$elixir_ver" ]]; then
+		echo "Error: Unable to detect Elixir version." >&2
+		return 1
+	fi
+
+	if ! is_version_ge "$elixir_ver" "1.18.0"; then
+		echo "Error: Elixir version must be >= 1.18.0 (Current: $elixir_ver)." >&2
+		echo "Native JSON module support requires Elixir 1.18 or newer." >&2
+		return 1
+	fi
+}
+
+# 2. 校验指定路径是否为有效的 Phoenix 项目
+check_phoenix_project() {
+	local repo_path="$1"
+
+	# 检查 mix.exs 是否存在
+	if [[ ! -f "$repo_path/mix.exs" ]]; then
+		echo "Error: 'mix.exs' not found in '$repo_path'." >&2
+		echo "Please specify a valid Phoenix/Mix project root." >&2
+		return 1
+	fi
+
+	# 检查 mix.exs 中是否包含 phoenix 依赖来简单验证 Phoenix 项目
+	if ! grep -q ":phoenix" "$repo_path/mix.exs"; then
+		echo "Error: 'phoenix' dependency not found in '$repo_path/mix.exs'." >&2
+		echo "Please make sure this is a valid Phoenix project." >&2
+		return 1
+	fi
+
+	## 使用 mix phx -v 验证 Phoenix 环境及配置，问题：以来mix环境
+	# if ! (cd "$repo_path" && mix phx -v) >/dev/null 2>&1; then
+	#   echo "Error: Failed to run 'mix phx -v' in '$repo_path'." >&2
+	#   echo "Make sure Phoenix is properly installed and configured in this project." >&2
+	#   return 1
+	# fi
+}
+
+# 提取或获取 Mix 应用名称（带缓存与确认交互）
+get_app_name() {
+	local repo_path="$1"
+	local build_dir="$repo_path/_build"
+	local cache_file="$build_dir/.appname"
+	local app_name=""
+
+	# 1. 优先从缓存读取
+	if [[ -f "$cache_file" ]]; then
+		app_name=$(cat "$cache_file" | tr -d '[:space:]')
+		if [[ -n "$app_name" ]]; then
+			echo "$app_name"
+			return 0
+		fi
+	fi
+
+	# 2. 缓存不存在，使用精确正则抽取 app: :foo 中的 foo
+	local detected_app=""
+	if [[ -f "$repo_path/mix.exs" ]]; then
+		detected_app=$(sed -n -E 's/.*app:[[:space:]]*:([a-zA-Z0-9_]+).*/\1/p' "$repo_path/mix.exs" | head -n 1 | tr -d '[:space:]' || true)
+	fi
+
+	# 3. 用户交互确认（所有提示信息重定向到 >&2，避免污染返回值）
+	if [[ -n "$detected_app" ]]; then
+		echo -n "🔍 检测到应用名称为 [ $detected_app ]，是否确认？[Y/n]: " >&2
+		read -r response
+		response="${response:-Y}" # 默认回车为 Y
+
+		if [[ "$response" =~ ^[Yy]$ ]]; then
+			app_name="$detected_app"
+		fi
+	fi
+
+	# 4. 若解析失败或用户未确认，提示手动输入
+	while [[ -z "$app_name" ]]; do
+		echo -n "✏️  请输入正确的 Mix 应用名称 (app_name): " >&2
+		read -r input_app
+		app_name=$(echo "$input_app" | tr -d '[:space:]')
+	done
+
+	# 5. 写入缓存文件
+	mkdir -p "$build_dir"
+	echo "$app_name" >"$cache_file"
+	echo "💾 应用名称已缓存至: $cache_file" >&2
+
+	# 只向标准输出打印干净的应用名
+	echo "$app_name"
+
+	# mix 依赖太重，且需要解析 AST，必须依赖 mix.exs 上下文
+	#   (
+	#     cd "$repo_path" &&
+	#       mix eval --no-compile --no-deps-check --no-elixir-version-check --no-archives-check \
+	#         "Mix.Project.get().project()[:app] |> to_string() |> IO.puts()"
+	#   ) 2>/dev/null
+}
+
+# 检查本地未提交更改，有变动则打印警告
+check_uncommitted_changes() {
+	local repo_path="$1"
+	local uncommitted
+	uncommitted=$(git -C "$repo_path" status --porcelain 2>/dev/null || true)
+
+	if [[ -n "$uncommitted" ]]; then
+		echo "⚠️ 【警告】检测到本地仓库包含未提交或未跟踪的更改！"
+		echo "$uncommitted" | sed 's/^/  /'
+		echo ""
+		return 0
+	fi
+	return 1
+}
+
+# 生成模板内容
+cmd_gen() {
+	local repo_path="$1"
+	local app_name="$2"
+
+	local root_folder_name="${repo_path:t}"
+	local mix_env="prod"
+	local target_app_path="$repo_path/_build/$mix_env/_app"
+
+	# 原 mix phx.gen.secret 替换为纯 elixir 执行（生成 64 字节 Base64 随机密钥）
+	local secret_key
+	secret_key=$(elixir -e 'IO.puts(:crypto.strong_rand_bytes(48) |> Base.encode64())')
+
+	cat <<EOF
+name: $root_folder_name
+domain_suffix: .s
+app_type: phx
+cwd: $target_app_path
+cmd: $target_app_path/bin/server
+args: []
+env:
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/${app_name}_prod?sslmode=disable
+  PHX_HOST: \${APP_DOMAIN}
+  PORT: \${PORT}
+  SECRET_KEY_BASE: $secret_key
+commands:
+  migrate:
+    cmd: $target_app_path/bin/migrate
+    unset_env:
+      - PORT
+idle_timeout: 600s
+EOF
+}
+
+# 查看当前应用构建与链接状态
+cmd_status() {
+	local repo_path="$1"
+	local app_name="$2"
+
+	local mix_env="prod"
+	local builder_app_path="$repo_path/_build/$mix_env/_builder/_build/$mix_env/rel/$app_name"
+	local target_app_path="$repo_path/_build/$mix_env/_app"
+
+	echo "📊 应用状态信息: $app_name"
+	echo "----------------------------------------"
+
+	# 获取本地 Git 最新提交状态
+	local local_branch local_commit
+	local_branch=$(git -C "$repo_path" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+	local_commit=$(git -C "$repo_path" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+	echo "🌿 本地 Git 状态: 分支 [$local_branch] | 最新 Commit [$local_commit]"
+
+	# 1. 检查构建状态
+	if [[ -d "$builder_app_path" ]]; then
+		echo "📦 构建状态: [已构建] ($builder_app_path)"
+	else
+		echo "📦 构建状态: [未构建]"
+	fi
+
+	# 2. 检查软链接状态
+	if [[ -L "$target_app_path" ]]; then
+		local link_target
+		link_target=$(readlink "$target_app_path")
+		if [[ -d "$target_app_path" ]]; then
+			echo "🔗 链接状态: [已链接] $target_app_path -> $link_target"
+		else
+			echo "🔗 链接状态: [已链接但目标失效 $target_app_path -> $link_target]"
+		fi
+	elif [[ -e "$target_app_path" ]]; then
+		echo "🔗 链接状态: [存在非软链接文件/目录: $target_app_path]"
+	else
+		echo "🔗 链接状态: [未链接]"
+	fi
+
+	# 3. 读取元信息 (.build_info) 并包含差异对比
+	local info_file="$target_app_path/.build_info"
+	if [[ ! -f "$info_file" && -f "$builder_app_path/.build_info" ]]; then
+		info_file="$builder_app_path/.build_info"
+	fi
+
+	if [[ -f "$info_file" ]]; then
+		echo ""
+		echo "📋 构建元信息 ($info_file):"
+		inspect_build_info "$info_file" "   "
+
+		# 提取 JSON 中已构建的 commit_id
+		local built_commit
+		built_commit=$(get_built_commit "$info_file")
+
+		echo ""
+		if [[ -n "$built_commit" && "$built_commit" != "$local_commit" ]]; then
+			echo "⚠️  【差异检测】已部署 Commit ($built_commit) 与本地 HEAD ($local_commit) 不一致！"
+			echo "🔍 查看改动差异对比命令："
+			echo "   git -C \"$repo_path\" diff $built_commit..$local_commit"
+		else
+			echo "✨ 已部署 Commit 与本地 HEAD 一致 ($local_commit)"
+		fi
+	fi
+}
+
+# 执行构建步骤
+cmd_build() {
+	local repo_path="$1"
+	local app_name="$2"
+	local force_flag="$3" # 1 表示开启了 -f/--force 标志
+
+	if check_uncommitted_changes "$repo_path"; then
+		echo "❌ 错误：检测到本地仓库存在未提交或未跟踪的变更，构建已终止！" >&2
+		echo "请先 commit 提交或 stash 暂存修改后，再运行构建程序。" >&2
+		return 1
+	fi
+
+	local branch_name commit_id commit_msg
+	branch_name=$(git -C "$repo_path" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+	commit_id=$(git -C "$repo_path" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+	commit_msg=$(git -C "$repo_path" log -1 --pretty=%B 2>/dev/null || echo "No commit message")
+
+	local mix_env="prod"
+	local builder_repo_path="$repo_path/_build/$mix_env/_builder"
+	local builder_app_path="$builder_repo_path/_build/$mix_env/rel/$app_name"
+	local info_file="$builder_app_path/.build_info"
+
+	echo "🚀 构建应用:	$app_name"
+	echo "📍 源码路径:	$repo_path"
+	echo "📍 构建目录:	$builder_repo_path"
+	echo "📌 构建分支:	$branch_name"
+	echo "📌 构建提交:	$commit_id"
+	echo "📌 提交信息:	$commit_msg"
+	echo "----------------------------------------"
+
+	# 检测是否已存在相匹配的构建产物
+	if [[ -f "$info_file" ]]; then
+		local built_commit
+		built_commit=$(get_built_commit "$info_file")
+
+		if [[ -n "$built_commit" && "$built_commit" == "$commit_id" ]]; then
+			if [[ "$force_flag" == "1" ]]; then
+				echo "⚡ 检测到已存在匹配 Commit ($commit_id) 的构建产物，但使用了强建标志 (-f/--force)，即将重新构建..."
+			else
+				echo "✨ 检测到 Commit ($commit_id) 已处于构建完成状态！"
+				return 0
+
+				# # 判断是否为交互式 TTY 终端
+				# if [[ -t 0 ]]; then
+				# 	echo -n "❓ 是否强制重新构建？[y/N]: " >&2
+				# 	read -r response
+				# 	if [[ ! "$response" =~ ^[Yy]$ ]]; then
+				# 		echo "⏭️  跳过构建过程。"
+				# 		return 0
+				# 	fi
+				# else
+				# 	# 非交互环境默认跳过
+				# 	echo "⏭️  非交互环境下自动跳过构建。如需强制构建，请追加 '-f' 或 '--force' 标志。"
+				# 	return 0
+				# fi
+
+			fi
+		fi
+	fi
+
+	sync_source_git_clone "$repo_path" "$builder_repo_path"
+
+	# 进入构建器目录进行操作
+	pushd "$builder_repo_path" >/dev/null
+
+	# 设置环境变量并编译
+	export MIX_ENV="$mix_env"
+
+	mix deps.get --only $MIX_ENV --offline || mix deps.get --only $MIX_ENV
+	mix deps.compile
+	mix assets.setup
+	mix compile
+	mix assets.deploy
+	mix release --overwrite
+
+	popd >/dev/null
+
+	# 在构建出的 release 产物目录下写入结构化的 .build_info
+	if [[ -d "$builder_app_path" ]]; then
+		local build_time
+		build_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ") # UTC 时间格式
+		local build_user="${USER:-unknown}"
+		local build_host="$(hostname)"
+
+		elixir -e '
+      [app, env, branch, commit, msg, time, by, target] = System.argv()
+      data = %{
+        app_name: app,
+        env: env,
+        branch: branch,
+        commit_id: commit,
+        commit_msg: msg,
+        built_at: time,
+        built_by: by
+      }
+      File.write!(target, inspect(data, limit: :infinity))
+    ' -- "$app_name" "$mix_env" "$branch_name" "$commit_id" "$commit_msg" "$build_time" "$build_user@$build_host" "$builder_app_path/.build_info"
+
+		echo "📄 已写入构建元信息: $builder_app_path/.build_info"
+	else
+		echo "Warning: release directory '$builder_app_path' not found, skip writing .build_info" >&2
+	fi
+
+	echo "✅ 构建完成！"
+}
+
+# ==============================================================================
+# 公共方法：从 .build_info 缓存文件中精准提取 commit_id
+# 选用 Elixir Map 文本解析原因：
+# 1. 随时增减字段极其方便，Map.get 取值具有天然的向下兼容性。
+# 2. 避免 JSON 解析的转义、空格与换行边界问题，代码极其精简。
+# ==============================================================================
+get_built_commit() {
+	local info_file="$1"
+	[[ -f "$info_file" ]] || return 0
+
+	elixir -e 'File.read!("'$info_file'") |> Code.eval_string() |> elem(0) |> Map.get(:commit_id) |> IO.puts()' 2>/dev/null
+}
+
+# ==============================================================================
+# 公共方法：美观打印 .build_info 缓存内容
+# 选用理由：利用 IO.inspect(pretty: true) 自动实现漂亮的 Key-Value 缩进排版
+# ==============================================================================
+inspect_build_info() {
+	local info_file="$1"
+	local indent="${2:-   }" # 默认每行缩进 3 个空格
+
+	[[ -f "$info_file" ]] || return 0
+
+	# 新版本：解析 Map 结构并优雅格式化输出
+	elixir -e 'Code.eval_file(System.argv() |> Enum.at(0)) |> elem(0) |> IO.inspect(pretty: true, width: 60)' -- "$info_file" 2>/dev/null | sed "s/^/$indent/"
+}
+
+# ==============================================================================
+# 源码同步实现方式一：Git Clone (浅 clone) / Git Pull (推荐)
+# 优点：
+# 1. 首次 clone 采用 --depth 1 浅克隆，速度极快。
+# 2. 之后构建直接使用 fetch/reset 增量拉取更新，Git 会自然保留未改变文件的 mtime，
+#    极大地避免 Mix 产生重复全量编译，显著提升增量构建效率。
+# ==============================================================================
+sync_source_git_clone() {
+	local src="$1"
+	local dest="$2"
+
+	echo "📦 [同步模式: git clone/pull] 正在同步源码至构建目录..."
+
+	if [[ -d "$dest/.git" ]]; then
+		echo "  -> 增量更新已存在构建目录 (fetch & reset)..."
+		git -C "$dest" fetch --depth 1 "file://$src" HEAD && git -C "$dest" reset --hard FETCH_HEAD
+	elif [[ -d "$dest" ]]; then
+		echo "Error: 构建目录 '$dest' 已存在，但不是有效的 Git 仓库！" >&2
+		echo "这可能是由于上次构建中断或残留的文件导致的。" >&2
+		echo "请手动检查或清理该目录后再试: rm -rf \"$dest\"" >&2
+		return 1
+	else
+		echo "  -> 初始化浅层 Git 仓库镜像 (depth 1)..."
+		git clone --depth 1 "file://$src" "$dest"
+	fi
+}
+
+# # Rsync 增量文件同步（保持 mtime 与文件属性，排除编译产物，问题：以来rsync 工具）
+# sync_source_rsync() {
+#   local src="$1" dest="$2"
+#   mkdir -p "$dest"
+#   rsync -a --delete --exclude='_build' --exclude='deps' --exclude='.git' "$src/" "$dest/"
+# }
+
+# # Git Archive 打包解压（问题：即使代码未变，仍会导致mtime变更进而触发重复编译）
+# sync_source_git_archive() {
+#   local src="$1" dest="$2"
+#   mkdir -p "$dest"
+#   find "$dest" -mindepth 1 -maxdepth 1 ! -name '_build' ! -name 'deps' -exec rm -rf {} +
+#   git -C "$src" archive HEAD | tar -x -C "$dest"
+# }
+
+# 执行软链接步骤
+cmd_link() {
+	local repo_path="$1"
+	local app_name="$2"
+
+	local mix_env="prod"
+	local builder_app_path="$repo_path/_build/$mix_env/_builder/_build/$mix_env/rel/$app_name"
+	local target_app_path="$repo_path/_build/$mix_env/_app"
+
+	if [[ ! -d "$builder_app_path" ]]; then
+		echo "Error: Built release path does not exist: $builder_app_path" >&2
+		echo "Please run 'build' command first." >&2
+		return 1
+	fi
+
+	echo "🔗 创建/更新部署软链接..."
+	ln -snf "$builder_app_path" "$target_app_path"
+	echo "✨ 部署链接成功！"
+	echo "   Target app path: $target_app_path"
+	echo "   Linked to:       $builder_app_path"
+
+	# 读取并显示部署的应用元数据
+	local build_info_file="$target_app_path/.build_info"
+	if [[ -f "$build_info_file" ]]; then
+		echo ""
+		echo "📋 当前部署版本元信息 (.build_info):"
+		inspect_build_info "$build_info_file" "   "
+	fi
+}
+
+main() {
+	local sub_cmd="${1:-}"
+
+	# 1. 无参数或请求帮助：尽早拦截并退出
+	if [[ -z "$sub_cmd" || "$sub_cmd" == "-h" || "$sub_cmd" == "--help" || "$sub_cmd" == "h" || "$sub_cmd" == "help" ]]; then
+		usage
+		if [[ -n "$sub_cmd" ]]; then
+			return 0
+		else
+			return 1
+		fi
+	fi
+
+	# 检查环境命令依赖及 Elixir 版本
+	check_dependencies || return 1
+
+	shift
+
+	# 2. 解析后续选项（如 -f/--force）与 repo-path
+	local force_flag=0
+	local repo_path=""
+
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		-f | --force)
+			force_flag=1
+			shift
+			;;
+		*)
+			if [[ -z "$repo_path" ]]; then
+				repo_path="$1"
+			fi
+			shift
+			;;
+		esac
+	done
+
+	local default_path
+	default_path=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+	repo_path="${repo_path:-$default_path}"
+	repo_path="${repo_path:A}" # 转换为绝对路径
+
+	check_phoenix_project "$repo_path" || return 1
+
+	# 3. 提取 Mix 应用名称
+	local app_name
+	app_name="$(get_app_name "$repo_path")"
+	if [[ -z "$app_name" ]]; then
+		echo "Error: Failed to fetch Phoenix application name from $repo_path" >&2
+		return 1
+	fi
+
+	# 4. 根据具体子命令分流执行
+	case "$sub_cmd" in
+	a | appname)
+		echo "$app_name"
+		;;
+	g | gen | tmpl)
+		cmd_gen "$repo_path" "$app_name"
+		;;
+	s | status | i | info)
+		cmd_status "$repo_path" "$app_name"
+		;;
+	b | build)
+		cmd_build "$repo_path" "$app_name" "$force_flag"
+		;;
+	l | link)
+		cmd_link "$repo_path" "$app_name"
+		;;
+	r | rel | deploy)
+		cmd_build "$repo_path" "$app_name" "$force_flag"
+		echo ""
+		cmd_link "$repo_path" "$app_name"
+		;;
+	*)
+		echo "Error: Unknown command '$sub_cmd'" >&2
+		usage >&2
+		return 1
+		;;
+	esac
+}
+
+main "$@"

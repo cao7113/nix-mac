@@ -10,6 +10,12 @@ alias what="which -a" # whence -a
 alias fun="whence -f" # functions xxx
 alias opts="getopt"
 
+# l = "eza -laah";
+# ls = "eza --icons";
+# ll = "eza -lh --icons --git";
+# la = "eza -lah --icons --git";
+# cat = "bat";
+
 # 检测 zoxide 是否存在
 if command -v zoxide >/dev/null 2>&1; then
 	# 如果存在，初始化 zoxide 并将别名设为 j
@@ -42,3 +48,7 @@ alias -g CP='| pbcopy' # macOS 剪贴板
 # cat log.txt G "error" L
 # ls -R H
 # cat config.json CP
+
+# # 极客清理：按照你的要求判断并备份/删除旧的 .zshrc
+# # 使用了 Zsh 的 [[ -L ]] 判断软链接，[[ -f ]] 判断普通文件
+# nix-clean-zsh = "[[ -L ~/.zshrc ]] && rm ~/.zshrc || [[ -f ~/.zshrc ]] && mv ~/.zshrc ~/.zshrc.bak.$(date +%Y%m%d_%H%M%S)";

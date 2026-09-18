@@ -9,17 +9,17 @@ function repo() {
 
 	# todo save into repo(.sec or chezmoi)
 	# local conf_file=~/.config/repo-manager/repos.yaml
-	local repo_dir=~/dev/golab/repo-manager
+	local src_dir=~/dev/golab/repo-manager
 
 	case "$act" in
-	j)
-		cd $repo_dir
+	j.src)
+		cd $src_dir
 		;;
-	j.rc)
+	j)
 		cd $this_dir
 		;;
 	d | dev.run)
-		local local_cmd=$repo_dir/bin/repo
+		local local_cmd=$src_dir/bin/repo
 		echo "# Using dev: $local_cmd"
 		$local_cmd "$@"
 		;;

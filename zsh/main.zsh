@@ -11,7 +11,7 @@ if ((!${+_DSHRC_FILE})); then
 	source "${DSH_HOME}/lib/sourcer.zsh"
 	source "${DSH_HOME}/lib/profile.zsh"
 	source "${DSH_HOME}/lib/dotrc.zsh"
-	source "${DSH_HOME}/alias.zsh"
+	source "${DSH_HOME}/aliases.zsh"
 
 	## set path and fpath
 	fpath=("${DSH_HOME}/functions" $fpath)

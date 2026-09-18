@@ -14,6 +14,7 @@ alias dk="docker"
 alias dki='docker images -a'
 alias dkps="docker ps -a"
 alias dkpl='docker pull'
+
 dkgrep() {
 	docker images -a | grep $@
 }

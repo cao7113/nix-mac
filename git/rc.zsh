@@ -12,6 +12,12 @@ function git-wrapper() {
 	test)
 		cd "$(ops home)/test-git"
 		;;
+	ci)
+		gci "$@"
+		;;
+	cci)
+		cci "$@"
+		;;
 	t | tag)
 		git-tag "$@"
 		;;
@@ -65,6 +71,10 @@ function git-commit-id() {
 # use cog commit instead!!!
 function gci() {
 	git commit -m "$*"
+}
+
+function cci() {
+	cog commit "$@"
 }
 
 function git-log() {

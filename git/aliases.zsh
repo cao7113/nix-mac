@@ -33,4 +33,4 @@ alias gdif2="git diff HEAD~1"
 alias gb=git-branch
 alias glog="git-log"
 alias gtag="git-tag"
-alias og="gbo"
+alias og="git-remote web"
