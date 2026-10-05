@@ -1,4 +1,6 @@
 alias gco='git checkout'
+alias gm='git merge'
+alias gbr='git branch'
 alias ga='git add'
 alias gst='git status'
 alias gcl="git clone"

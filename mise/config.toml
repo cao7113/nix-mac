@@ -17,6 +17,7 @@ mkcert = "latest"
 swift = "latest"
 kc-util = "latest"
 repo = "latest"
+node = "lts"
 
 [tools.sbox]
 version = "1.14.0-beta.14"
